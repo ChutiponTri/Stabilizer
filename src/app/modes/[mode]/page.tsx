@@ -4,9 +4,13 @@ import Create from "@/app/patients/create";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React from "react";
 
 function page({ params }: { params: { mode: string } }) {
+  const router = useRouter();
+  checkAvailable(params.mode, router);
+
   const [customers, setCustomers] = React.useState<string[]>([]);
   const [fetching, setFetching] = React.useState<boolean>(true);
 
@@ -109,14 +113,11 @@ function ShowRightBar({ users }: { users: string[] }) {
   );
 }
 
-{/* <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
-<div className="lg:col-span-7">
-  <Chart mode={params.mode} />
-</div>
-
-<div className="hidden lg:block lg:col-span-3 sticky top-20">
-  <RightBar />
-</div>
-</div> */}
+function checkAvailable(mode: string, router: ReturnType<typeof useRouter>) {
+  const available = ["cervical", "thoracic", "lumbar", "custom"];
+    if (!available.includes(mode)) {
+    router.replace("/");
+  }
+}
 
 export default page;

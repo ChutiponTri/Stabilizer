@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { getCustomers } from "@/actions/user.action";
 import React from "react";
 
 function RightBar() {

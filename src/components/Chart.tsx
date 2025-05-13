@@ -458,6 +458,10 @@ function Chart({ params }: PageProps) {
                 startAngle={minAngle}
                 endAngle={maxAngle}
                 stroke="none"
+                { ...(activeLabel === "Custom" && {
+                  onClick: () => setIsCustom(true),
+                })}
+                
               >
                 <Cell fill="rgba(255, 0, 0, 0.8)" className="dark:bg-red-600" />
               </Pie>
