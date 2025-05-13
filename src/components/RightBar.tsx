@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import React from "react";
+import { getCustomers } from "@/actions/user.action";
 
 function RightBar() {
   const [users, setCustomers] = React.useState<string[]>([]);
   React.useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const resp = await fetch("/api/customers");
-        const customers = await resp.json();
+        const customers = await getCustomers();
         console.log("Fetched customers:", customers);
-        setCustomers(customers.customers); // Set the fetched customers in the state
+        setCustomers(customers); // Set the fetched customers in the state
       } catch (error) {
         console.error("Failed to fetch customers", error);
       }
