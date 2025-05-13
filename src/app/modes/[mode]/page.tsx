@@ -1,5 +1,6 @@
 "use client";
 
+import { getCustomers } from "@/actions/user.action";
 import Create from "@/app/patients/create";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,9 +17,8 @@ function page({ params }: { params: { mode: string } }) {
 
   const fetchCustomers = async () => {
     try {
-      const resp = await fetch("/api/customers");
-      const customers = await resp.json();
-      setCustomers(customers.customers);
+      const customers = await getCustomers();
+      setCustomers(customers);
     } catch (error) {
       console.error("Failed to fetch customers", error);
     } finally {
