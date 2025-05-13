@@ -47,6 +47,7 @@ interface PageProps {
 }
 
 function Chart({ params }: PageProps) {
+  const router = useRouter();
   const activeLabel = params.mode.charAt(0).toUpperCase() + params.mode.toLowerCase().slice(1);
   const patientId = params.id;
 
@@ -77,6 +78,22 @@ function Chart({ params }: PageProps) {
   }, [startTime]);
 
   React.useEffect(() => {
+    setIsClient(true);
+    const fetchPatient = async () => {
+      try {
+        const patient = await queryCustomers(patientId);
+        console.log("Patient?", patient);
+        if (!patient) {
+          router.replace("/");
+        }
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+      }
+    };
+    fetchPatient();
+  }, []);
+
+  React.useEffect(() => {
     const fetchDevice = async () => {
       try {
         setFetchingDevice(true);
@@ -93,22 +110,6 @@ function Chart({ params }: PageProps) {
     }
     fetchDevice();
   }, [selectedDevice]);
-
-  React.useEffect(() => {
-    setIsClient(true);
-    const fetchPatient = async () => {
-      try {
-        const patient = await queryCustomers(patientId);
-        if (!patient) {
-          const router = useRouter();
-          router.replace("/");
-        }
-      } catch (error) {
-        console.error("Error fetching customers:", error);
-      }
-    };
-    fetchPatient();
-  }, []);
 
   const activeMode = modes.find((mode) => mode.label === activeLabel);
   const minAngle = activeMode ? 90 - activeMode.min * 3.6 : 90;
@@ -289,7 +290,8 @@ function Chart({ params }: PageProps) {
                   pair();
                 } else {
                   warning("Stop the system before pairing");
-                }}} 
+                }
+              }}
                 className="inline-block transition-transform duration-200 hover:scale-110 origin-center hover:text-blue-500 cursor-pointer">
                 Device: {activeDevice}
               </span>
