@@ -4,33 +4,16 @@ import { getCustomers } from "@/actions/user.action";
 import Create from "@/app/patients/create";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTheme } from "next-themes";
-import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 
-const ModeConfig = {
-  thoracic: [
-    { label: "Thoracic Extension", href: "/modes/thoracic-ext.png", dark: "/modes/thoracic-ext-dark.png" },
-    { label: "Thoracic Side-Shift to Right", href: "/modes/thoracic-shift.png", dark: "/modes/thoracic-shift-dark.png" },
-    { label: "Thoracic Rotation to Right", href: "/modes/thoracic-rot.png", dark: "/modes/thoracic-rot-dark.png" }
-  ],
-  lumbar: [
-    { label: "Lumbar Flexion", href: "/modes/lumbar-flex.png", dark: "/modes/lumbar-flex-dark.png" },
-    { label: "Lumbar Extension", href: "/modes/lumbar-ext.png", dark: "/modes/lumbar-ext-dark.png" },
-    { label: "Lumbar Side-Shift to Right", href: "/modes/lumbar-shift.png", dark: "/modes/lumbar-shift-dark.png" },
-    { label: "Lumbar Rotation to Right", href: "/modes/lumbar-rot.png", dark: "/modes/lumbar-rot-dark.png" }
-  ]
-
-}
-
-function page({ params }: { params: { mode: string } }) {
+function page() {
   const router = useRouter();
-  const mode = params.mode as keyof typeof ModeConfig;
-  const modes = ModeConfig[mode];
-  const { theme, setTheme } = useTheme();
-  checkAvailable(params.mode, router);
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
+  if (!mode) return router.push("/");
+  checkAvailable(mode, router);
 
   const [customers, setCustomers] = React.useState<string[]>([]);
   const [fetching, setFetching] = React.useState<boolean>(true);
@@ -57,18 +40,18 @@ function page({ params }: { params: { mode: string } }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
-      <div className="lg:col-span-7 grid grid-cols-2 gap-2">
-        {modes.length > 0 ? (
-          modes.map((mode, index) => (
-            <div key={index} className="w-full items-center justify-between">
-              <Link href={{ pathname: "/modes", query: { mode: mode.label } }} className="w-full" >
-                <Card className="w-full h-full mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
+      <div className="lg:col-span-7">
+        {customers.length > 0 ? (
+          customers.map((customer, index) => (
+            <div key={index} className="flex w-full gap-2 items-center justify-between">
+              <Link href={{ pathname: "/pressure", query: { mode: mode, id: customer } }} className="block w-full" >
+                <Card className="w-full mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
                   <CardHeader>
-                    <CardTitle>{mode.label}</CardTitle>
-                    <CardDescription>Select Mode {mode.label}</CardDescription>
+                    <CardTitle className="text-xl">Patient {customer}</CardTitle>
+                    <CardDescription>Choose to Select Patient</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Image src={theme === "dark" ? mode.dark : mode.href} width={500} height={500} alt="modes" />
+                    <div>Choose to Select Patient {customer}</div>
                   </CardContent>
                 </Card>
               </Link>
@@ -134,8 +117,11 @@ function ShowRightBar({ users }: { users: string[] }) {
 }
 
 function checkAvailable(mode: string, router: ReturnType<typeof useRouter>) {
-  const available = ["thoracic", "lumbar"];
-  if (!available.includes(mode)) {
+  const available = [
+    "cervical extension", "thoracic extention", "thoracic side-shift to right", "thoracic rotation to right",
+    "lumbar flexion", "lumbar extension", "lumbar side-shift to right", "lumbar rotation to right", "custom"
+  ];
+  if (!available.includes(mode.toLowerCase())) {
     router.replace("/");
   }
 }

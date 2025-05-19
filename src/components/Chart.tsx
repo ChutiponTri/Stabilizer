@@ -17,10 +17,12 @@ import { Input } from "./ui/input"
 
 const maxPressure = 100;
 const initialMode = [
-  { label: "Cervical", min: 20, max: 30, fill: "var(--color-cervical)" },
-  { label: "Thoracic", min: 30, max: 40, fill: "var(--color-thoracic)" },
-  { label: "Lumbar", min: 40, max: 50, fill: "var(--color-lumbar)" },
-  { label: "Custom", min: 20, max: 50, fill: "var(--color-custom)" }
+  { label: "cervical", min: 20, max: 30, fill: "var(--color-cervical)" },
+  { label: "thoracic", min: 30, max: 40, fill: "var(--color-thoracic)" },
+  { label: "lumbar extension", min: 30, max: 40, fill: "var(--color-lumbar)" },
+  { label: "lumbar", min: 40, max: 50, fill: "var(--color-lumbar)" },
+  { label: "custom", min: 20, max: 50, fill: "var(--color-custom)" },
+
 ]
 
 type Modes = { label: string, min: number, max: number, fill: string }
@@ -48,7 +50,7 @@ interface PageProps {
 
 function Chart({ params }: PageProps) {
   const router = useRouter();
-  const activeLabel = params.mode.charAt(0).toUpperCase() + params.mode.toLowerCase().slice(1);
+  const activeLabel = params.mode;
   const patientId = params.id;
 
   const [timer, setInitTimer] = React.useState<number>(10);
@@ -111,7 +113,7 @@ function Chart({ params }: PageProps) {
     fetchDevice();
   }, [selectedDevice]);
 
-  const activeMode = modes.find((mode) => mode.label === activeLabel);
+  const activeMode = modes.find((mode) => activeLabel.toLowerCase().includes(mode.label));
   const minAngle = activeMode ? 90 - activeMode.min * 3.6 : 90;
   const maxAngle = activeMode ? 90 - activeMode.max * 3.6 : 90;
 
@@ -458,10 +460,10 @@ function Chart({ params }: PageProps) {
                 startAngle={minAngle}
                 endAngle={maxAngle}
                 stroke="none"
-                { ...(activeLabel === "Custom" && {
+                {...(activeLabel === "Custom" && {
                   onClick: () => setIsCustom(true),
                 })}
-                
+
               >
                 <Cell fill="rgba(255, 0, 0, 0.8)" className="dark:bg-red-600" />
               </Pie>
