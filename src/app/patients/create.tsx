@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -12,9 +12,9 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
-import { DateTimePicker } from '@/components/datetime-picker'
 import { useWatch } from "react-hook-form";
 import { toast } from "react-hot-toast";
+import { DatePicker } from "@/components/date-picker"
 
 const formSchema = z.object({
   id: z.string().min(1),
@@ -52,14 +52,22 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
 
   const weight = useWatch({ control: form.control, name: "weight" });
   const height = useWatch({ control: form.control, name: "height" });
+  const birth = useWatch({ control: form.control, name: "birth" });
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (weight && height) {
       const heightInMeters = height / 100;
       const bmi = +(weight / (heightInMeters * heightInMeters)).toFixed(2);
       form.setValue("bmi", bmi);
     }
   }, [weight, height, form]);
+
+  React.useEffect(() => {
+    if (birth) {
+      const age = new Date().getFullYear() - new Date(birth).getFullYear();
+      form.setValue("age", age);
+    }
+  }, [birth, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -211,15 +219,16 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
               render={({ field }) => (
                 <FormItem className="flex flex-col mt-2">
                   <FormLabel>Date of birth</FormLabel>
-                  <DateTimePicker
-                    hideTime
-                    onChange={field.onChange}
-                    value={field.value || new Date()}
+                  {/* Custom DatePicker takes full control */}
+                  <DatePicker
+                    value={field.value}         // Pass the current value from the form
+                    onChange={field.onChange}   // Pass the onChange handler to update the form state
                   />
                   <FormMessage />
                 </FormItem>
               )}
             />
+
           </div>
 
         </div>

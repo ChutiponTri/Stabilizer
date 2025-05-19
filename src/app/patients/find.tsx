@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -12,9 +12,11 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
-import { DateTimePicker } from '@/components/datetime-picker'
 import { useWatch } from "react-hook-form";
 import { toast } from "react-hot-toast";
+import { DatePicker } from "@/components/date-picker"
+import { getCustomers } from "@/actions/user.action"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const formSchema = z.object({
   id: z.string().min(1),
@@ -38,22 +40,15 @@ const querySchema = z.object({
 });
 
 function Find() {
-  const [data, setData] = useState<any>(null);
-  const [flag, setFlag] = useState<Boolean>(false);
+  const [data, setData] = React.useState<any>(null);
+  const [flag, setFlag] = React.useState<boolean>(false);
+  const [refresh, setRefresh] = React.useState<boolean>(false);
+  const [fetching, setFetching] = React.useState<boolean>(true);
+  const [patientList, setPatientList] = React.useState<string[]>([]);
 
-  const genders = [{
-    label: "Male",
-    value: "male"
-  },
-  {
-    label: "Female",
-    value: "female"
-  },
-  {
-    label: "Other",
-    value: "other"
-  }
-  ] as const;
+  const genders = [{ label: "Male", value: "male" },
+  { label: "Female", value: "female" },
+  { label: "Other", value: "other" }] as const;
 
   const query = useForm<z.infer<typeof querySchema>>({
     resolver: zodResolver(querySchema)
@@ -66,16 +61,40 @@ function Find() {
     },
   });
 
+  React.useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        setFetching(true);
+        const customers = await getCustomers();
+        setPatientList(customers); // Set the fetched customers in the state
+      } catch (error) {
+        console.error("Failed to fetch customers", error);
+      } finally {
+        setFetching(false);
+      }
+    };
+    fetchCustomers(); // Actually call the fetch function
+  }, [refresh]);
+
   const weight = useWatch({ control: form.control, name: "weight" });
   const height = useWatch({ control: form.control, name: "height" });
+  const birth = useWatch({ control: form.control, name: "birth" });
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (weight && height) {
       const heightInMeters = height / 100;
       const bmi = +(weight / (heightInMeters * heightInMeters)).toFixed(2);
       form.setValue("bmi", bmi);
     }
   }, [weight, height, form]);
+
+  React.useEffect(() => {
+    if (birth) {
+      const age = new Date().getFullYear() - new Date(birth).getFullYear();
+      form.setValue("age", age);
+    }
+  }, [birth, form]);
+
 
   async function fetchCustomer(id: string) {
     try {
@@ -90,7 +109,7 @@ function Find() {
           id: id,
           age: fetchedData.age,
           gender: fetchedData.gender,
-          birth: fetchedData.birth,
+          birth: new Date(fetchedData.birth),
           history: fetchedData.history,
           weight: fetchedData.weight,
           height: fetchedData.height,
@@ -114,10 +133,10 @@ function Find() {
     }
   }
 
-  function onQuery(values: z.infer<typeof querySchema>) {
+  function onQuery(patientId: string) {
     try {
-      console.log("Query", values);
-      fetchCustomer(values.id);
+      console.log("Query", patientId);
+      fetchCustomer(patientId);
 
     } catch (error) {
       console.error("Form submission error", error);
@@ -136,9 +155,12 @@ function Find() {
             body: JSON.stringify(values)
           });
           const data = await resp.json();
+          setRefresh(!refresh);
           console.log(data);
         } catch (error) {
           console.error("Error fetching data:", error);
+        } finally {
+          setFlag(false);
         }
       };
       fetchData();
@@ -150,7 +172,7 @@ function Find() {
     }
   }
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (flag && data) {
       form.reset({
         id: data.id,
@@ -166,254 +188,261 @@ function Find() {
   }, [flag, data, form]);
 
   return (
+    fetching ? (
+      <div className="flex items-center space-x-4">
+        <Skeleton className="h-12 w-12 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-[250px]" />
+          <Skeleton className="h-4 w-[200px]" />
+        </div>
+      </div>
+    ) : 
+
     !flag ? (
-      <Form {...query}>
-        <form onSubmit={query.handleSubmit(onQuery)} className="space-y-8 max-w-3xl mx-auto">
-
-          <FormField
-            control={query.control}
-            name="id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Patient ID</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Input ID"
-
-                    type=""
-                    {...field} />
-                </FormControl>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit">Submit</Button>
-        </form>
-      </Form>
-    ) : (
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-3xl mx-auto py-10">
-
-          <FormField
-            control={form.control}
-            name="id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Patient ID</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Input ID"
-
-                    type=""
-                    {...field} />
-                </FormControl>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="grid grid-cols-12 gap-4">
-
-            <div className="col-span-4">
-
-              <FormField
-                control={form.control}
-                name="age"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Age</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Input Age"
-
-                        type="number"
-                        {...field} />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    patientList.length > 0 && (
+      <div>
+        <div className="text-center font-semibold text-xl mt-0 mb-4">Select Patient to Edit Data</div>
+        <div className="flex flex-wrap justify-center">
+          {patientList.map((value, index) => (
+            <div className="mt-0 py-2 mx-2">
+              <Button onClick={() => onQuery(value)}>
+                {value}
+              </Button>
             </div>
+          ))}
+        </div>
+        <div className="py-2 flex justify-center">
+          <Button type="button" variant={"secondary"} onClick={() => setRefresh(!refresh)}>Refresh</Button>
+        </div>
+      </div>
+    )
+  ) : (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-3xl mx-auto py-10">
 
-            <div className="col-span-4">
-              <FormField
-                control={form.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col mt-2">
-                    <FormLabel>Gender</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full justify-between",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value
-                              ? genders.find(
-                                (gender) => gender.value === field.value
-                              )?.label
-                              : "Select gender"}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
-                        <Command>
-                          <CommandInput placeholder="Search gender..." />
-                          <CommandList>
-                            <CommandEmpty>No gender found.</CommandEmpty>
-                            <CommandGroup>
-                              {genders.map((gender) => (
-                                <CommandItem
-                                  value={gender.label}
-                                  key={gender.value}
-                                  onSelect={() => {
-                                    form.setValue("gender", gender.value);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      gender.value === field.value
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    )}
-                                  />
-                                  {gender.label}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+        <FormField
+          control={form.control}
+          name="id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Patient ID</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Input ID"
 
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                  type=""
+                  {...field} />
+              </FormControl>
 
-            <div className="col-span-4">
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-              <FormField
-                control={form.control}
-                name="birth"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col mt-2">
-                    <FormLabel>Date of birth</FormLabel>
-                    <DateTimePicker
-                      hideTime
-                      onChange={field.onChange}
-                      value={field.value || new Date()}
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+        <div className="grid grid-cols-12 gap-4">
 
+          <div className="col-span-4">
+
+            <FormField
+              control={form.control}
+              name="age"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Age</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Input Age"
+
+                      type="number"
+                      {...field} />
+                  </FormControl>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
-          <FormField
-            control={form.control}
-            name="history"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Training History</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Patient's Training History"
-                    className="resize-none"
-                    {...field}
+          <div className="col-span-4">
+            <FormField
+              control={form.control}
+              name="gender"
+              render={({ field }) => (
+                <FormItem className="flex flex-col mt-2">
+                  <FormLabel>Gender</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value
+                            ? genders.find(
+                              (gender) => gender.value === field.value
+                            )?.label
+                            : "Select gender"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Search gender..." />
+                        <CommandList>
+                          <CommandEmpty>No gender found.</CommandEmpty>
+                          <CommandGroup>
+                            {genders.map((gender) => (
+                              <CommandItem
+                                value={gender.label}
+                                key={gender.value}
+                                onSelect={() => {
+                                  form.setValue("gender", gender.value);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    gender.value === field.value
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {gender.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="col-span-4">
+            <FormField
+              control={form.control}
+              name="birth"
+              render={({ field }) => (
+                <FormItem className="flex flex-col mt-2">
+                  <FormLabel>Date of birth</FormLabel>
+                  {/* Custom DatePicker takes full control */}
+                  <DatePicker
+                    value={field.value}         // Pass the current value from the form
+                    onChange={field.onChange}   // Pass the onChange handler to update the form state
                   />
-                </FormControl>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="grid grid-cols-12 gap-4">
-
-            <div className="col-span-4">
-
-              <FormField
-                control={form.control}
-                name="weight"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Weight (kg)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Input Weight (kg)"
-
-                        type="number"
-                        {...field} />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="col-span-4">
-
-              <FormField
-                control={form.control}
-                name="height"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Height (cm)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Input Height (cm)"
-
-                        type="number"
-                        {...field} />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="col-span-4">
-
-              <FormField
-                control={form.control}
-                name="bmi"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>BMI</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Input BMI (kg/m^2)"
-
-                        type="number"
-                        {...field} />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
           </div>
+
+
+        </div>
+
+        <FormField
+          control={form.control}
+          name="history"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Training History</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Patient's Training History"
+                  className="resize-none"
+                  {...field}
+                />
+              </FormControl>
+
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-12 gap-4">
+
+          <div className="col-span-4">
+
+            <FormField
+              control={form.control}
+              name="weight"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Weight (kg)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Input Weight (kg)"
+
+                      type="number"
+                      {...field} />
+                  </FormControl>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="col-span-4">
+
+            <FormField
+              control={form.control}
+              name="height"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Height (cm)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Input Height (cm)"
+
+                      type="number"
+                      {...field} />
+                  </FormControl>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="col-span-4">
+
+            <FormField
+              control={form.control}
+              name="bmi"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>BMI</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Input BMI (kg/m^2)"
+
+                      type="number"
+                      {...field} />
+                  </FormControl>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+        </div>
+        <div className="space-x-2">
           <Button type="submit">Submit</Button>
-        </form>
-      </Form>)
+          <Button type="button" variant={"destructive"} onClick={() => setFlag(false)}>Cancel</Button>
+        </div>
+      </form>
+    </Form>)
   )
 }
 
