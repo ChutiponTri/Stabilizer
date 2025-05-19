@@ -111,7 +111,7 @@ function Chart({ params }: PageProps) {
       }
     }
     fetchDevice();
-  }, [selectedDevice]);
+  }, [selectedDevice, showEditDialog]);
 
   const activeMode = modes.find((mode) => activeLabel.toLowerCase().includes(mode.label));
   const minAngle = activeMode ? 90 - activeMode.min * 3.6 : 90;
@@ -502,7 +502,7 @@ function Chart({ params }: PageProps) {
                   devices.map((device) => (
                     <label
                       key={device}
-                      className={`flex items-center gap-2 cursor-pointer p-2 rounded ${selectedDevice === device ? "bg-blue-100" : "hover:bg-gray-100"
+                      className={`flex items-center gap-2 cursor-pointer p-2 rounded ${selectedDevice === device ? "bg-blue-100 dark:bg-blue-500" : "hover:bg-gray-100 dark:hover:bg-gray-500"
                         }`}
                     >
                       <input
