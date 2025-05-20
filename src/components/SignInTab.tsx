@@ -14,7 +14,7 @@ function Signin() {
       <Card>
         <CardHeader>
           <CardTitle className="text-center text-2xl font-semibold">BackFit</CardTitle>
-          <CardDescription>A digital pressure biofeedback device for back exercises</CardDescription>
+          <CardDescription className="text-center">A digital pressure biofeedback device for back exercises</CardDescription>
         </CardHeader>
         <CardContent>
 
