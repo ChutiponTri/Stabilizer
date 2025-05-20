@@ -85,7 +85,7 @@ const UnAuthenticatedSidebar = () => (
   <div className="sticky top-20">
     <Card>
       <CardHeader>
-        <CardTitle className="text-center text-xl font-semibold">Stabilizer</CardTitle>
+        <CardTitle className="text-center text-xl font-semibold">BackFit</CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-center text-muted-foreground mb-4">

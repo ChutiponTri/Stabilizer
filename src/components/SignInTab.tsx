@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { SignInButton, SignUpButton } from "@clerk/nextjs"
 import { Button } from "./ui/button"
 import Image from "next/image"
@@ -13,7 +13,8 @@ function Signin() {
     <div  className="lg:col-span-7">
       <Card>
         <CardHeader>
-          <CardTitle className="text-center text-2xl font-semibold">Stabilizer</CardTitle>
+          <CardTitle className="text-center text-2xl font-semibold">BackFit</CardTitle>
+          <CardDescription>A digital pressure biofeedback device for back exercises</CardDescription>
         </CardHeader>
         <CardContent>
 
