@@ -2,6 +2,9 @@
 
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { getDbFirebase } from "./firebase.action";
+import { revalidateTag } from "next/cache";
+import { z } from "zod";
+import { formSchema } from "@/app/patients/find";
 
 export async function syncUser() {
   try {
@@ -9,18 +12,18 @@ export async function syncUser() {
     const user = await currentUser();
 
     if (!userId || !user) return { status: 404, message: "User not found" };
-      
+
     try {
       const response = await getDbFirebase(`users/${userId}`, "shallow=true");
       const keys = response && typeof response === "object" ? Object.keys(response) : [];
-  
+
       // Check if data exists
       if (keys.length > 0) {
         console.log("User Exists");
         return;
       } else {
         // Create a new user in the 'users' node
-        const dbUser = { 
+        const dbUser = {
           name: `${user.firstName || ""} ${user.lastName || ""}`,
           username: user.username ?? user.emailAddresses[0].emailAddress.split("@")[0],
           email: user.emailAddresses[0].emailAddress,
@@ -63,11 +66,14 @@ export async function getCustomers() {
     const user = await currentUser();
 
     if (!userId || !user) return [];
-      
+
     try {
-      const response = await getDbFirebase(`customers/${userId}`, "shallow=true");
+      const response = await getDbFirebase(`customers/${userId}`, "shallow=true", "GET", null, {
+        revalidate: false,
+        tags: [`customer-list-${userId}`]
+      });
       const keys = response && typeof response === "object" ? Object.keys(response) : [];
-  
+
       // Check if data exists
       if (keys.length > 0) {
         console.log("Shallow Query:", keys);
@@ -76,7 +82,7 @@ export async function getCustomers() {
         console.log("No customers")
         return [];
       }
-      
+
     } catch (error) {
       console.error('Error checking if user exists:', error);
       return [];
@@ -87,17 +93,42 @@ export async function getCustomers() {
   }
 }
 
-export async function queryCustomers(id:string) {
+export async function getCustomersDetail() {
+  try {
+    const { userId } = await auth();
+    const user = await currentUser();
+
+    if (!userId || !user) return [];
+
+    try {
+      const response = await getDbFirebase(`customers/${userId}`, "shallow=false", "GET", null, {
+        revalidate: false,
+        tags: [`customers-${userId}`]
+      });
+      
+      return response;
+
+    } catch (error) {
+      console.error('Error checking if user exists:', error);
+      return [];
+    }
+  } catch (error) {
+    console.log("Error in syncUser", error);
+    return [];
+  }
+}
+
+export async function queryCustomers(id: string) {
   try {
     const { userId } = await auth();
     const user = await currentUser();
 
     if (!userId || !user) return { status: 404, message: "User not found" };
-      
+
     try {
       const response = await getDbFirebase(`customers/${userId}`, "shallow=true");
       const keys = response && typeof response === "object" ? Object.keys(response) : [];
-  
+
       // Check if data exists
       if (keys.length > 0) {
         const users = await getDbFirebase(`customers/${userId}/${id.toLowerCase()}`);
@@ -116,24 +147,24 @@ export async function queryCustomers(id:string) {
 }
 
 export async function createCustomer(
-    id:string, age:number, gender:string, birth:Date, history:string, weight:number, height:number, bmi:number
-  ) {
+  id: string, age: number, gender: string, birth: Date, history: string, weight: number, height: number, bmi: number
+) {
   try {
     const { userId } = await auth();
     const user = await currentUser();
 
     if (!userId || !user) return { status: 404, message: "User not found" };
-      
+
     try {
       const response = await getDbFirebase(`users/${userId}`, "shallow=true");
       const keys = response && typeof response === "object" ? Object.keys(response) : [];
-  
+
       // Check if data exists
       if (keys.length > 0) {
         const existing = await getDbFirebase(`customers/${userId}/${id.toLowerCase()}`, "shallow=true");
-        if (existing && Object.keys(existing).length > 0) return {status: "not ok", message: "Patient already Exist", exist: true};
+        if (existing && Object.keys(existing).length > 0) return { status: "not ok", message: "Patient already Exist", exist: true };
 
-        const customer = { 
+        const customer = {
           age: age,
           gender: gender,
           birth: birth,
@@ -143,14 +174,42 @@ export async function createCustomer(
           bmi: bmi
         };
         const post = await getDbFirebase(`customers/${userId}/${id.toLowerCase()}`, "", "PUT", customer);
-        return {status: "ok", message: "Insert Patient Success"};
+        revalidateTag(`customers-${userId}`)
+        revalidateTag(`customer-list-${userId}`)
+        return { status: "ok", message: "Insert Patient Success" };
       } else {
         console.log("Physiotherapist not exists");
-        return {status: "not ok", message: "Cannot Insert"};
+        return { status: "not ok", message: "Cannot Insert" };
       }
     } catch (error) {
       console.error('Error checking if user exists:', error);
-      return {status: "not ok", message: error};
+      return { status: "not ok", message: error };
+    }
+
+  } catch (error) {
+    console.log("Error in syncUser", error);
+  }
+}
+
+export async function adjustCustomer(values: z.infer<typeof formSchema>) {
+  try {
+    const { userId } = await auth();
+    const user = await currentUser();
+
+    if (!userId || !user) return { status: 404, message: "User not found" };
+
+    try {
+      const response = await fetch("api/patient", {
+        method: "POST",
+        body: JSON.stringify(values)
+      });
+
+      revalidateTag(`customers-${userId}`)
+      revalidateTag(`customer-list-${userId}`)
+      return { status: "ok", message: "Insert Patient Success" };
+    } catch (error) {
+      console.error('Error checking if user exists:', error);
+      return { status: "not ok", message: error };
     }
 
   } catch (error) {

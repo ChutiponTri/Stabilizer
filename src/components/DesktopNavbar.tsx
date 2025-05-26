@@ -34,7 +34,7 @@ function DesktopNavbar() {
           <Button variant="ghost" className="flex items-center gap-3 justify-start" asChild>
             <Link href="/getdata">
               <DatabaseIcon className="w-4 h-4" />
-              Get Data
+              <span className="hidden lg:inline">Get Data</span>
             </Link>
           </Button>
           <Button variant="ghost" className="flex items-center gap-2" asChild>

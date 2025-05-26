@@ -65,14 +65,14 @@ export const columns: ColumnDef<Pressure>[] = [
     header: ({ column }) => {
       return (
         <div className="flex justify-center">
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="text-center"
-        >
-          Timestamp
-          <ArrowUpDown />
-        </Button>
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="text-center"
+          >
+            Timestamp
+            <ArrowUpDown />
+          </Button>
         </div>
       )
     },
@@ -129,13 +129,13 @@ function Query() {
 
   const activePatientRef = React.useRef(activePatient);
   React.useEffect(() => {
-      activePatientRef.current = activePatient;  // Update ref when activePatient changes
-    }, [activePatient]);
+    activePatientRef.current = activePatient;  // Update ref when activePatient changes
+  }, [activePatient]);
 
   const activeDataListRef = React.useRef(activeDataList);
   React.useEffect(() => {
-      activeDataListRef.current = activeDataList;  // Update ref when activePatient changes
-    }, [activeDataList]);
+    activeDataListRef.current = activeDataList;  // Update ref when activePatient changes
+  }, [activeDataList]);
 
   React.useEffect(() => {
     const getIndex = async () => {
@@ -165,7 +165,7 @@ function Query() {
     fetchPatients();
   }, [activePatient, activeDataList]);
 
-  React.useEffect( () => {
+  React.useEffect(() => {
     const fetchPatientData = async () => {
       try {
         if (activePatientRef.current) {
@@ -177,10 +177,10 @@ function Query() {
           const result = await getDataRaw(query);
           const data = result && typeof result === "object" ? Object.values(result) : [];
           setRawData(data as { pressure: number; timestamp: string }[]);
-          setDataLoading(false);
         }
-      } catch(error) {
+      } catch (error) {
         console.log("Error in Fetching Data", error);
+      } finally {
         setDataLoading(false);
       }
     }
@@ -206,7 +206,7 @@ function Query() {
               <SelectValue placeholder="Select Patient" />
             </SelectTrigger>
             <SelectContent align="end" className="rounded-xl w-full max-w-[140px] sm:right-auto">
-              {patientList.map((patient) => (
+              {patientList.sort().map((patient) => (
                 <SelectItem key={patient} value={patient} className="rounded-lg">
                   {patient}
                 </SelectItem>
@@ -218,7 +218,7 @@ function Query() {
               <SelectValue placeholder="Select Data" />
             </SelectTrigger>
             <SelectContent align="end" className="rounded-xl w-full max-w-[140px] sm:right-auto">
-              {dataList.map((data) => (
+              {dataList.sort().map((data) => (
                 <SelectItem key={data} value={data} className="rounded-lg">
                   {data}
                 </SelectItem>
@@ -233,79 +233,84 @@ function Query() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Select Mode</DropdownMenuLabel>
-          <DropdownMenuRadioGroup value={activeMode} onValueChange={setActiveMode}>
-            {modes.map((modeOption) => (
-              <DropdownMenuRadioItem key={modeOption} value={modeOption}>
-                {modeOption}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
+            <DropdownMenuLabel>Select Mode</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={activeMode} onValueChange={setActiveMode}>
+              {modes.map((modeOption) => (
+                <DropdownMenuRadioItem key={modeOption} value={modeOption}>
+                  {modeOption}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      { activeMode === "Table" ? (
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
+      {activeMode === "Table" ? (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
                             header.column.columnDef.header,
                             header.getContext()
                           )}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            { dataLoading ? (
-                <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  <ButtonLoading text={"Loading Data ..."} />
-                </TableCell>
-              </TableRow>
-              ) : (
-              table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+                      </TableHead>
+                    )
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  Please Select Data.
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      ) : ( <ChartRecall data={rawData} /> ) }
+              ))}
+            </TableHeader>
+            <TableBody>
+              {dataLoading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    <ButtonLoading text={"Loading Data ..."} />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
+                      Please Select Data.
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (dataLoading ?
+        (<div className="text-center">
+          <ButtonLoading text={"Loading Data ..."} /> 
+        </div>):
+        (<ChartRecall data={rawData} />))
+      }
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}

@@ -18,7 +18,7 @@ import { DatePicker } from "@/components/date-picker"
 import { getCustomers } from "@/actions/user.action"
 import { Skeleton } from "@/components/ui/skeleton"
 
-const formSchema = z.object({
+export const formSchema = z.object({
   id: z.string().min(1),
   age: z.coerce.number().min(1).max(200),
   gender: z.string(),
@@ -155,7 +155,6 @@ function Find() {
             body: JSON.stringify(values)
           });
           const data = await resp.json();
-          setRefresh(!refresh);
           console.log(data);
         } catch (error) {
           console.error("Error fetching data:", error);

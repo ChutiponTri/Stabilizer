@@ -1,28 +1,40 @@
 "use client";
 
-import { getCustomersDetail } from "@/actions/user.action";
+import { getCustomers } from "@/actions/user.action";
 import Create from "@/app/patients/create";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTheme } from "next-themes";
+import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 
-function page() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const mode = searchParams.get("mode");
-  if (!mode) return router.push("/");
-  const check = checkAvailable(mode);
-  if (!check) return router.replace("/");
+const ModeConfig = {
+  thoracic: [
+    { label: "Thoracic Extension", href: "/modes/thoracic-ext.png", dark: "/modes/thoracic-ext-dark.png" },
+    { label: "Thoracic Side-Shift to Right", href: "/modes/thoracic-shift.png", dark: "/modes/thoracic-shift-dark.png" },
+    { label: "Thoracic Rotation to Right", href: "/modes/thoracic-rot.png", dark: "/modes/thoracic-rot-dark.png" }
+  ],
+  lumbar: [
+    { label: "Lumbar Flexion", href: "/modes/lumbar-flex.png", dark: "/modes/lumbar-flex-dark.png" },
+    { label: "Lumbar Extension", href: "/modes/lumbar-ext.png", dark: "/modes/lumbar-ext-dark.png" },
+    { label: "Lumbar Side-Shift to Right", href: "/modes/lumbar-shift.png", dark: "/modes/lumbar-shift-dark.png" },
+    { label: "Lumbar Rotation to Right", href: "/modes/lumbar-rot.png", dark: "/modes/lumbar-rot-dark.png" }
+  ]
+
+}
+
+function ModeClient({ mode }: { mode: string }) {
+  const validMode = mode as keyof typeof ModeConfig;
+  const modes = ModeConfig[validMode];
+  const { theme, setTheme } = useTheme();
 
   const [customers, setCustomers] = React.useState<string[]>([]);
   const [fetching, setFetching] = React.useState<boolean>(true);
 
   const fetchCustomers = async () => {
     try {
-      const customers = await getCustomersDetail();
-      console.log("Fetched", customers);
+      const customers = await getCustomers();
       setCustomers(customers);
     } catch (error) {
       console.error("Failed to fetch customers", error);
@@ -40,30 +52,25 @@ function page() {
     return <ShowSkeleton />;
   }
 
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
-      <div className="lg:col-span-7">
-        {Object.entries(customers).length > 0 ? (
-          Object.entries(customers).map(([id, data]: [string, any]) => (
-            <div key={id} className="flex w-full gap-2 items-center justify-between">
-              <Link href={{ pathname: "/pressure", query: { mode, id } }} className="block w-full">
-                <Card className="w-full mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
+      <div className="lg:col-span-7 grid grid-cols-2 gap-2">
+        {modes.length > 0 ? (
+          modes.map((mode, index) => (
+            <div key={index} className="w-full items-center justify-between">
+              <Link href={{ pathname: "/modes", query: { mode: mode.label } }} className="w-full" >
+                <Card className="w-full h-full mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
                   <CardHeader>
-                    <CardTitle className="text-xl">Patient ID: {id}</CardTitle>
-                    <CardDescription>{data.gender === "male" ? "👨" : "👩"} {data.age} years old, {data.bmi} BMI</CardDescription>
+                    <CardTitle>{mode.label}</CardTitle>
+                    <CardDescription>Select Mode {mode.label}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p>
-                      This patient is a {data.age}-year-old {data.gender} with a height of {data.height} cm and a weight of {data.weight} kg.
-                    </p>
-                    <p>
-                      BMI: {data.bmi} — Medical History: {data.history || "Not specified"}
-                    </p>
+                    <Image src={theme === "dark" ? mode.dark : mode.href} width={500} height={500} alt="modes" />
                   </CardContent>
                 </Card>
               </Link>
             </div>
+
           ))
         ) : (
           <div>
@@ -123,15 +130,5 @@ function ShowRightBar({ users }: { users: string[] }) {
   );
 }
 
-function checkAvailable(mode: string) {
-  const available = [
-    "cervical extension", "thoracic extention", "thoracic side-shift to right", "thoracic rotation to right",
-    "lumbar flexion", "lumbar extension", "lumbar side-shift to right", "lumbar rotation to right", "custom"
-  ];
-  if (!available.includes(mode.toLowerCase())) {
-    return false;
-  }
-  return true;
-}
 
-export default page;
+export default ModeClient;

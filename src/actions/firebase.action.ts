@@ -1,6 +1,12 @@
 "use server";
 
-export async function getDbFirebase(path:string, query:string="", method:string="GET", payload:any=null) {
+export async function getDbFirebase(
+  path:string, 
+  query:string="", 
+  method:string="GET", 
+  payload:any=null,
+  nextOptions?: { revalidate?: number | false, tags?: string[] }
+) {
   try {
     const queryString = query ? `?${query}` : "";
     const db = process.env.DB_ADDRESS;
@@ -15,7 +21,10 @@ export async function getDbFirebase(path:string, query:string="", method:string=
     if (method !== "GET" && method !== "HEAD" && payload !== null) {
         options.body = JSON.stringify(payload);
     }
-    const response = await fetch(url, options);
+    const response = await fetch(url, {
+      ...options,
+      next: nextOptions
+    });
 
     if (!response.ok) {
         throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);

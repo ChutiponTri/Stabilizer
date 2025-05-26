@@ -4,6 +4,7 @@ import { PressureData } from "@/components/Chart";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { getDbFirebase } from "./firebase.action";
 import { Query } from "@/components/Query";
+import { revalidateTag } from "next/cache";
 
 export async function storeData(data: PressureData) {
   try {
@@ -130,6 +131,7 @@ export async function saveDevice(device: string) {
           device: devName
         };
         const post = await getDbFirebase(`users/${userId}`, "", "PATCH", datatoSave);
+        revalidateTag(`device-${userId}`);
         console.log("Posted");
         return {status: "ok", message: "Insert Device Success"};
       } else {
@@ -153,7 +155,10 @@ export async function getDevice() {
     if (!userId || !user) return { status: 404, message: "User not found" };
     
     try {
-      const response = await getDbFirebase(`users/${userId}/device`);
+      const response = await getDbFirebase(`users/${userId}/device`, "", "GET", null, {
+        revalidate: false,
+        tags: [`device-${userId}`]
+      });
       if (!response) return { status: "not ok", message: "Device Not Found" };
       const data = {
         device: response

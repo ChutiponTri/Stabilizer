@@ -22,7 +22,6 @@ const initialMode = [
   { label: "lumbar extension", min: 30, max: 40, fill: "var(--color-lumbar)" },
   { label: "lumbar", min: 40, max: 50, fill: "var(--color-lumbar)" },
   { label: "custom", min: 20, max: 50, fill: "var(--color-custom)" },
-
 ]
 
 type Modes = { label: string, min: number, max: number, fill: string }
@@ -40,6 +39,16 @@ type TimeData = {
   current: number;
   fill: string;
 }
+
+type Repetition = {
+  remaining: number,
+  total: number,
+};
+
+type RestDuration = {
+  duration: number,
+  flag: boolean,
+};
 
 interface PageProps {
   params: {
@@ -133,7 +142,7 @@ function Chart({ params }: PageProps) {
 
   React.useEffect(() => {
     const dataCallback = async (data: { pressure?: number; device?: string }) => {
-      if ("pressure" in data && typeof data.pressure === "number" && flagRef.current) {
+      if ("pressure" in data && typeof data.pressure === "number" && flagRef.current && !restRef.current.flag) {
         const newTimestamp = new Date().toLocaleString();
         let newData: PressureData = { pressure: data.pressure, timestamp: newTimestamp };
         // setData((prevData) => [...prevData, newData]);
@@ -181,7 +190,7 @@ function Chart({ params }: PageProps) {
 
   const publish = () => {
     if (!isClient || !activeLabel || !mqttRef.current) return;
-    const cervicalMax = modes.find(mode => mode.label === activeLabel)?.max || 0;
+    const cervicalMax = modes.find(mode => activeLabel.toLowerCase().includes(mode.label))?.max || 0;
     if (cervicalMax == 0) return;
     mqttRef.current.publish(cervicalMax, activeLabel);
     console.log("Start: MQTT published →", cervicalMax, "mode →", activeLabel);
@@ -205,11 +214,25 @@ function Chart({ params }: PageProps) {
     console.log(`Selected Device: ${selectedDevice}`);
   };
 
+  const initialReps: Repetition = {
+    remaining: 5,
+    total: 5,
+  };
+
+  const initialRest: RestDuration = {
+    duration: 5,
+    flag: false,
+  };
+
   const initialTime: TimeData[] = [
     { label: "remaining", current: timer, fill: "hsl(142, 71%, 45%)" },
     { label: "elapsed", current: 0, fill: "#e5e7eb" }
   ];
 
+  const [reps, setReps] = React.useState(initialReps);
+  const repsRef = React.useRef(reps.remaining);
+  const [rest, setRest] = React.useState(initialRest);
+  const restRef = React.useRef(rest);
   const [timeLeft, setTimeLeft] = React.useState<TimeData[]>(initialTime);
   const [percent, setPercent] = React.useState<TimeData[]>(initialTime);
   const [isEditing, setIsEditing] = React.useState(false);
@@ -232,6 +255,17 @@ function Chart({ params }: PageProps) {
       { ...initialTime[1] }
     ];
     setPercent(newTime);
+
+    setReps(prevReps => ({
+      ...prevReps,
+      remaining: prevReps.total,
+    }));
+
+    setRest(prevRest => {
+      const updated = { ...prevRest, flag: false };
+      restRef.current = updated;
+      return updated;
+    });
   }
 
   React.useEffect(() => {
@@ -240,31 +274,59 @@ function Chart({ params }: PageProps) {
     initPercent();
     const now = Date.now();
     const duration = timeValue * 1000;
-    const targetEndTime = now + duration;
+    const restDuration = rest.duration * 1000;
+    let targetEndTime = now + duration;
     setBeginTime(now);
+    repsRef.current = reps.remaining;
 
     const interval = setInterval(() => {
       const current = Date.now();
       const remaining = Math.max(targetEndTime - current, 0);
       const seconds = remaining / 1000;
-      const percent = (remaining / duration) * timeValue;
-      console.log(percent);
+      const percentage = (remaining / (restRef.current.flag ? restDuration : duration)) * timeValue;
 
-      setTimeLeft([
-        { ...initialTime[0], current: seconds },
-        { ...initialTime[1], current: timeValue - seconds }
+      const fillColor = restRef.current.flag
+        ? "hsl(210, 100%, 65%)"  // red for rest
+        : "hsl(142, 71%, 45%)";    // green for active
+
+      setTimeLeft(prev => [
+        { ...prev[0], current: seconds, fill: fillColor },
+        { ...prev[1], current: timeValue - seconds }
       ]);
 
-      setPercent([
-        { ...initialTime[0], current: percent },
-        { ...initialTime[1], current: timer - percent }
+      setPercent(prev => [
+        { ...prev[0], current: percentage, fill: fillColor },
+        { ...prev[1], current: timer - percentage }
       ]);
-
       if (seconds <= 0) {
-        clearInterval(interval);
-        setFlag(false);
-        setPressure({ pressure: 25 });
-        setIsFinish(true);
+        if (repsRef.current > 1) {
+          if (!restRef.current.flag) {
+            setRest(prevRest => {
+              const updated = { ...prevRest, flag: true };
+              restRef.current = updated;
+              return updated;
+            });
+            targetEndTime = Date.now() + restDuration;
+          } else {
+            setRest(prevRest => {
+              const updated = { ...prevRest, flag: false };
+              restRef.current = updated;
+              return updated;
+            });
+            repsRef.current -= 1;
+            setReps(prevReps => ({
+              ...prevReps,
+              remaining: repsRef.current,
+            }));
+            targetEndTime = Date.now() + duration;
+          }
+        } else {
+          clearInterval(interval);
+          setFlag(false);
+          setPressure({ pressure: 25 });
+          setIsFinish(true);
+          setReps(prev => ({ ...prev, remaining: 0 }));
+        }
       }
     }, 10);
 
@@ -279,6 +341,7 @@ function Chart({ params }: PageProps) {
   }, [flag]);
 
   if (!isClient) return null; // Prevents hydration issues
+  if (!activeMode) return null;
 
   return (
     <div>
@@ -299,7 +362,7 @@ function Chart({ params }: PageProps) {
               </span>
             </div>
             <div className="font-bold my-0 py-0">
-              <Link href={`/modes/${activeLabel}`}>
+              <Link href={{ pathname: "/modes", query: { mode: activeLabel } }}>
                 <span className="inline-block transition-transform duration-200 hover:scale-110 origin-center hover:text-blue-500 cursor-pointer">
                   Patient ID: {patientId}
                 </span>
@@ -307,7 +370,14 @@ function Chart({ params }: PageProps) {
             </div>
           </div>
           <div className="flex-1 text-center">
-            <CardTitle className="text-2xl font-bold">{activeLabel}</CardTitle>
+            {["Cervical Extension", "Custom"].includes(activeLabel) ?
+              <CardTitle className="text-2xl font-bold">{activeLabel}</CardTitle> :
+              <Link href={`/modes/${activeMode.label == "lumbar extension" ? "lumbar" : activeMode.label}`}>
+                <CardTitle className="text-2xl font-bold transition-transform duration-200 hover:scale-110 origin-center hover:text-blue-500 cursor-pointer">
+                  {activeLabel}
+                  </CardTitle>
+              </Link>
+            }
             <CardDescription>Pressure Data in mmHg</CardDescription>
           </div>
           <div className="flex gap-3">
@@ -324,7 +394,6 @@ function Chart({ params }: PageProps) {
                     const curTime = new Date().toLocaleString();
                     setTime(curTime);
                     publish();
-                    console.log(pressureData, pressureData.length);
                   }
                 }
               }}>Start</Button>
@@ -534,7 +603,7 @@ function Chart({ params }: PageProps) {
 
       <Custom modes={modes} isCustom={isCustom} setModes={setModes} setIsCustom={setIsCustom} />
 
-      <Timer timer={timer} onSubmit={handleTime} isEditing={isEditing} setTimeValue={setTimeValue} setInitTimer={setInitTimer} setIsEditing={setIsEditing} />
+      <Timer timer={timer} onSubmit={handleTime} isEditing={isEditing} setTimeValue={setTimeValue} setInitTimer={setInitTimer} rest={rest.duration} setRest={setRest} reps={reps.total} setReps={setReps} setIsEditing={setIsEditing} />
 
     </div>
   );
@@ -640,40 +709,83 @@ function Custom({ modes, isCustom, setModes, setIsCustom }: {
   )
 }
 
-function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, setIsEditing }: {
+function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, rest, setRest, reps, setReps, setIsEditing }: {
   timer: number
   onSubmit?: (newTime: number) => void,
   isEditing: boolean,
   setTimeValue: React.Dispatch<React.SetStateAction<number>>,
   setInitTimer: React.Dispatch<React.SetStateAction<number>>,
+  rest: number,
+  setRest: React.Dispatch<React.SetStateAction<RestDuration>>,
+  reps: number,
+  setReps: React.Dispatch<React.SetStateAction<Repetition>>,
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>,
 }) {
-  const time = React.useRef<HTMLInputElement>(null);
+  const timeInput = React.useRef<HTMLInputElement>(null);
+  const repsInput = React.useRef<HTMLInputElement>(null);
+  const restInput = React.useRef<HTMLInputElement>(null);
   return (
     <Dialog open={isEditing} onOpenChange={setIsEditing}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Adjust Countdown Timer</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="flex">
-            <div className="flex mx-auto">Set Timer :</div>
-            <div className="flex mx-auto">
-              <Input placeholder="mmHg" ref={time} type="number" min={0} max={100} defaultValue={timer} />
-            </div>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-2 items-center gap-4">
+            <div className="justify-self-end text-right pt-1">Set Repetitions (Reps):</div>
+            <Input
+              placeholder="reps"
+              ref={repsInput}
+              type="number"
+              min={1}
+              max={100}
+              defaultValue={reps}
+              className="h-10"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 items-center gap-4">
+            <div className="justify-self-end text-right pt-1">Set Repetition Timer (Secs):</div>
+            <Input
+              placeholder="seconds"
+              ref={timeInput}
+              type="number"
+              min={1}
+              max={100}
+              defaultValue={timer}
+              className="h-10"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 items-center gap-4">
+            <div className="justify-self-end text-right pt-1">Set Resting Timer (Secs):</div>
+            <Input
+              placeholder="seconds"
+              ref={restInput}
+              type="number"
+              min={1}
+              max={100}
+              defaultValue={rest}
+              className="h-10"
+            />
           </div>
         </div>
+
         <div className="flex justify-end gap-3">
           <DialogClose asChild>
             <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
           </DialogClose>
           <Button onClick={() => {
             setIsEditing(false);
-            const newTime = time.current?.valueAsNumber;
-            if (!newTime) toast.error("Please Fill the Time Duration");
+            const newTime = timeInput.current?.valueAsNumber;
+            const newReps = repsInput.current?.valueAsNumber;
+            const newRest = restInput.current?.valueAsNumber;
+            if (!newTime || !newReps || !newRest) toast.error("Please Fill the Time Duration");
             else {
               setInitTimer(newTime);
               setTimeValue(newTime);
+              setRest((prev) => ({ ...prev, duration: newRest }));
+              setReps((prev) => ({ remaining: newReps, total: newReps }));
               if (onSubmit) onSubmit(newTime);
               toast.success("Updated Timer Duration");
             }
