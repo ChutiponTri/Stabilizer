@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
 import React from "react"
+import { redirect } from "next/navigation";
 import PressureClient from "./PressureClient";
-import { checkAvailable } from "../modes/page";
+import { checkAvailableMode } from "@/lib/utils";
 
 function page({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const mode = searchParams.mode;
@@ -9,7 +9,7 @@ function page({ searchParams }: { searchParams: Record<string, string | undefine
 
   if (!mode || !id) redirect("/")
 
-  const availableMode = checkAvailable(mode);
+  const availableMode = checkAvailableMode(mode);
   
   if (!availableMode) redirect("/");
 

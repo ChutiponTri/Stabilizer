@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import React from "react";
 import ModePageClient from "./ModePageClient";
+import { checkAvailableMode } from "@/lib/utils";
 
 function page({ searchParams }: { searchParams: Record<string, string | undefined> }) {
 
@@ -8,23 +9,12 @@ function page({ searchParams }: { searchParams: Record<string, string | undefine
 
   if (!mode) redirect("/");
 
-  const check = checkAvailable(mode);
+  const check = checkAvailableMode(mode);
   if (!check) redirect("/");
 
   return (
     <ModePageClient mode={mode} />
   );
-}
-
-export function checkAvailable(mode: string) {
-  const available = [
-    "cervical extension", "thoracic extention", "thoracic side-shift to right", "thoracic rotation to right",
-    "lumbar flexion", "lumbar extension", "lumbar side-shift to right", "lumbar rotation to right", "custom"
-  ];
-  if (!available.includes(mode.toLowerCase())) {
-    return false;
-  }
-  return true;
 }
 
 export default page;
