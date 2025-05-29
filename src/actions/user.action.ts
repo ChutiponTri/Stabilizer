@@ -147,7 +147,7 @@ export async function queryCustomers(id: string) {
 }
 
 export async function createCustomer(
-  id: string, age: number, gender: string, birth: Date, history: string, weight: number, height: number, bmi: number
+  id: string, age: number, gender: string, birth: Date, history: string, weight: number, height: number, bmi: number, waist: number
 ) {
   try {
     const { userId } = await auth();
@@ -171,7 +171,8 @@ export async function createCustomer(
           history: history,
           weight: weight,
           height: height,
-          bmi: bmi
+          bmi: bmi,
+          waist: waist
         };
         const post = await getDbFirebase(`customers/${userId}/${id.toLowerCase()}`, "", "PUT", customer);
         revalidateTag(`customers-${userId}`)
@@ -191,7 +192,9 @@ export async function createCustomer(
   }
 }
 
-export async function adjustCustomer(values: z.infer<typeof formSchema>) {
+export async function adjustCustomer(
+  id: string, age: number, gender: string, birth: Date, history: string, weight: number, height: number, bmi: number, waist: number
+) {
   try {
     const { userId } = await auth();
     const user = await currentUser();
@@ -199,10 +202,18 @@ export async function adjustCustomer(values: z.infer<typeof formSchema>) {
     if (!userId || !user) return { status: 404, message: "User not found" };
 
     try {
-      const response = await fetch("api/patient", {
-        method: "POST",
-        body: JSON.stringify(values)
-      });
+
+      const customer = {
+          age: age,
+          gender: gender,
+          birth: birth,
+          history: history,
+          weight: weight,
+          height: height,
+          bmi: bmi,
+          waist: waist
+        };
+      const response = await getDbFirebase(`customers/${userId}/${id.toLowerCase()}`, "", "PUT", customer);
 
       revalidateTag(`customers-${userId}`)
       revalidateTag(`customer-list-${userId}`)

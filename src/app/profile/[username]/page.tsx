@@ -22,6 +22,7 @@ async function ProfilePageServer({ params }: { params: { username: string } }) {
   if (!authUser) return;
   
   const user = await getUserByClerkId(authUser.id);
+  console.log("user is : ", user);
   if (!user) notFound();
 
   return (

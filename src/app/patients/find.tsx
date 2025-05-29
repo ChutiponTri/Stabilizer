@@ -32,7 +32,8 @@ export const formSchema = z.object({
   history: z.string(),
   weight: z.coerce.number().min(1).max(300),
   height: z.coerce.number().min(1).min(100).max(300),
-  bmi: z.coerce.number()
+  bmi: z.coerce.number(),
+  waist: z.coerce.number().min(10).max(200)
 });
 
 const querySchema = z.object({
@@ -113,7 +114,8 @@ function Find() {
           history: fetchedData.history,
           weight: fetchedData.weight,
           height: fetchedData.height,
-          bmi: fetchedData.bmi
+          bmi: fetchedData.bmi,
+          waist: fetchedData.waist || 30
         }
         try {
           toast.success(`Found Patient ${id}`);
@@ -122,6 +124,7 @@ function Find() {
           setFlag(true);          // Set flag to true to indicate successful fetch
         } catch (error) {
           console.error("Validation error:", error);
+          toast.error(`Validation error: ${error}`);
           setFlag(false);
         }
       } else {
@@ -151,7 +154,7 @@ function Find() {
       const fetchData = async () => {
         try {
           const resp = await fetch("api/patient", {
-            method: "POST",
+            method: "PUT",
             body: JSON.stringify(values)
           });
           const data = await resp.json();
@@ -181,7 +184,8 @@ function Find() {
         history: data.history,
         weight: data.weight,
         height: data.height,
-        bmi: data.bmi
+        bmi: data.bmi,
+        waist: data.waist
       });
     }
   }, [flag, data, form]);
@@ -195,253 +199,254 @@ function Find() {
           <Skeleton className="h-4 w-[200px]" />
         </div>
       </div>
-    ) : 
+    ) :
 
-    !flag ? (
-    patientList.length > 0 && (
-      <div>
-        <div className="text-center font-semibold text-xl mt-0 mb-4">Select Patient to Edit Data</div>
-        <div className="flex flex-wrap justify-center">
-          {patientList.map((value, index) => (
-            <div className="mt-0 py-2 mx-2">
-              <Button onClick={() => onQuery(value)}>
-                {value}
-              </Button>
+      !flag ? (
+        patientList.length > 0 && (
+          <div>
+            <div className="text-center font-semibold text-xl mt-0 mb-4">Select Patient to Edit Data</div>
+            <div className="flex flex-wrap justify-center">
+              {patientList.map((value, index) => (
+                <div className="mt-0 py-2 mx-2">
+                  <Button onClick={() => onQuery(value)}>
+                    {value}
+                  </Button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="py-2 flex justify-center">
-          <Button type="button" variant={"secondary"} onClick={() => setRefresh(!refresh)}>Refresh</Button>
-        </div>
-      </div>
-    )
-  ) : (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-3xl mx-auto py-10">
-
-        <FormField
-          control={form.control}
-          name="id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Patient ID</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Input ID"
-
-                  type=""
-                  {...field} />
-              </FormControl>
-
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-12 gap-4">
-
-          <div className="col-span-4">
+            <div className="py-2 flex justify-center">
+              <Button type="button" variant={"secondary"} onClick={() => setRefresh(!refresh)}>Refresh</Button>
+            </div>
+          </div>
+        )
+      ) : (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-3xl mx-auto py-10">
 
             <FormField
               control={form.control}
-              name="age"
+              name="id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Age</FormLabel>
+                  <FormLabel>Patient ID</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Input Age"
-
-                      type="number"
-                      {...field} />
+                      placeholder="Input ID"
+                      type=""
+                      {...field}
+                    />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
 
-          <div className="col-span-4">
-            <FormField
-              control={form.control}
-              name="gender"
-              render={({ field }) => (
-                <FormItem className="flex flex-col mt-2">
-                  <FormLabel>Gender</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-4">
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Age</FormLabel>
                       <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "w-full justify-between",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value
-                            ? genders.find(
-                              (gender) => gender.value === field.value
-                            )?.label
-                            : "Select gender"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
+                        <Input
+                          placeholder="Input Age"
+                          type="number"
+                          {...field}
+                        />
                       </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
-                      <Command>
-                        <CommandInput placeholder="Search gender..." />
-                        <CommandList>
-                          <CommandEmpty>No gender found.</CommandEmpty>
-                          <CommandGroup>
-                            {genders.map((gender) => (
-                              <CommandItem
-                                value={gender.label}
-                                key={gender.value}
-                                onSelect={() => {
-                                  form.setValue("gender", gender.value);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    gender.value === field.value
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                                {gender.label}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="col-span-4">
-            <FormField
-              control={form.control}
-              name="birth"
-              render={({ field }) => (
-                <FormItem className="flex flex-col mt-2">
-                  <FormLabel>Date of birth</FormLabel>
-                  {/* Custom DatePicker takes full control */}
-                  <DatePicker
-                    value={field.value}         // Pass the current value from the form
-                    onChange={field.onChange}   // Pass the onChange handler to update the form state
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-          </div>
-
-
-        </div>
-
-        <FormField
-          control={form.control}
-          name="history"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Training History</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Patient's Training History"
-                  className="resize-none"
-                  {...field}
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
+              </div>
 
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              <div className="col-span-4">
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col mt-2">
+                      <FormLabel>Gender</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className={cn(
+                                "w-full justify-between",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value
+                                ? genders.find(
+                                  (gender) => gender.value === field.value
+                                )?.label
+                                : "Select gender"}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0">
+                          <Command>
+                            <CommandInput placeholder="Search gender..." />
+                            <CommandList>
+                              <CommandEmpty>No gender found.</CommandEmpty>
+                              <CommandGroup>
+                                {genders.map((gender) => (
+                                  <CommandItem
+                                    value={gender.label}
+                                    key={gender.value}
+                                    onSelect={() => {
+                                      form.setValue("gender", gender.value);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        gender.value === field.value
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    {gender.label}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-        <div className="grid grid-cols-12 gap-4">
-
-          <div className="col-span-4">
+              <div className="col-span-4">
+                <FormField
+                  control={form.control}
+                  name="birth"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col mt-2">
+                      <FormLabel>Date of birth</FormLabel>
+                      {/* Custom DatePicker takes full control */}
+                      <DatePicker
+                        value={field.value}         // Pass the current value from the form
+                        onChange={field.onChange}   // Pass the onChange handler to update the form state
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <FormField
               control={form.control}
-              name="weight"
+              name="history"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Weight (kg)</FormLabel>
+                  <FormLabel>Training History</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Input Weight (kg)"
-
-                      type="number"
-                      {...field} />
+                    <Textarea
+                      placeholder="Patient's Training History"
+                      className="resize-none"
+                      {...field}
+                    />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
 
-          <div className="col-span-4">
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-3">
+                <FormField
+                  control={form.control}
+                  name="weight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Weight (kg)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Input Weight (kg)"
+                          type="number"
+                          {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-            <FormField
-              control={form.control}
-              name="height"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Height (cm)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Input Height (cm)"
+              <div className="col-span-3">
+                <FormField
+                  control={form.control}
+                  name="height"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Height (cm)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Input Height (cm)"
+                          type="number"
+                          {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-                      type="number"
-                      {...field} />
-                  </FormControl>
+              <div className="col-span-3">
+                <FormField
+                  control={form.control}
+                  name="bmi"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>BMI</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Input BMI (kg/m^2)"
+                          type="number"
+                          {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+              <div className="col-span-3">
+                <FormField 
+                  control={form.control}
+                  name="waist"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Waist (cm)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Input Waist (cm)"
+                          type="number"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
-          <div className="col-span-4">
-
-            <FormField
-              control={form.control}
-              name="bmi"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>BMI</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Input BMI (kg/m^2)"
-
-                      type="number"
-                      {...field} />
-                  </FormControl>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-        </div>
-        <div className="space-x-2">
-          <Button type="submit">Submit</Button>
-          <Button type="button" variant={"destructive"} onClick={() => setFlag(false)}>Cancel</Button>
-        </div>
-      </form>
-    </Form>)
+            <div className="space-x-2">
+              <Button type="submit">Submit</Button>
+              <Button type="button" variant={"destructive"} onClick={() => setFlag(false)}>Cancel</Button>
+            </div>
+          </form>
+        </Form>)
   )
 }
 

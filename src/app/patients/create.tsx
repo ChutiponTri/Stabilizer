@@ -24,25 +24,17 @@ const formSchema = z.object({
   history: z.string(),
   weight: z.coerce.number().min(1).max(300),
   height: z.coerce.number().min(1).min(100).max(300),
-  bmi: z.coerce.number()
+  bmi: z.coerce.number(),
+  waist: z.coerce.number().min(10).max(200)
 });
 
 function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
 
-  const genders = [{
-    label: "Male",
-    value: "male"
-  },
-  {
-    label: "Female",
-    value: "female"
-  },
-  {
-    label: "Other",
-    value: "other"
-  }
-  ] as
-    const;
+  const genders = [
+    { label: "Male", value: "male" },
+    { label: "Female", value: "female" },
+    { label: "Other", value: "other" }
+  ] as const;
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -112,20 +104,16 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
               <FormControl>
                 <Input
                   placeholder="Input ID"
-
                   type=""
                   {...field} />
               </FormControl>
-
               <FormMessage />
             </FormItem>
           )}
         />
 
         <div className="grid grid-cols-12 gap-4">
-
           <div className="col-span-4">
-
             <FormField
               control={form.control}
               name="age"
@@ -135,11 +123,9 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
                   <FormControl>
                     <Input
                       placeholder="Input Age"
-
                       type="number"
                       {...field} />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
@@ -163,7 +149,6 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
                             "w-full justify-between",
                             !field.value && "text-muted-foreground"
                           )}
-
                         >
                           {field.value
                             ? genders.find(
@@ -204,7 +189,6 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
                       </Command>
                     </PopoverContent>
                   </Popover>
-
                   <FormMessage />
                 </FormItem>
               )}
@@ -212,7 +196,6 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
           </div>
 
           <div className="col-span-4">
-
             <FormField
               control={form.control}
               name="birth"
@@ -228,9 +211,7 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
                 </FormItem>
               )}
             />
-
           </div>
-
         </div>
 
         <FormField
@@ -246,16 +227,13 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
                   {...field}
                 />
               </FormControl>
-
               <FormMessage />
             </FormItem>
           )}
         />
 
         <div className="grid grid-cols-12 gap-4">
-
-          <div className="col-span-4">
-
+          <div className="col-span-3">
             <FormField
               control={form.control}
               name="weight"
@@ -265,19 +243,17 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
                   <FormControl>
                     <Input
                       placeholder="Input Weight (kg)"
-
                       type="number"
-                      {...field} />
+                      {...field}
+                    />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
 
-          <div className="col-span-4">
-
+          <div className="col-span-3">
             <FormField
               control={form.control}
               name="height"
@@ -287,19 +263,17 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
                   <FormControl>
                     <Input
                       placeholder="Input Height (cm)"
-
                       type="number"
-                      {...field} />
+                      {...field}
+                    />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
 
-          <div className="col-span-4">
-
+          <div className="col-span-3">
             <FormField
               control={form.control}
               name="bmi"
@@ -309,18 +283,37 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
                   <FormControl>
                     <Input
                       placeholder="Input BMI (kg/m^2)"
-
                       type="number"
-                      {...field} />
+                      {...field}
+                    />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
 
+          <div className="col-span-3">
+            <FormField
+              control={form.control}
+              name="waist"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Waist (cm)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Input Waist (cm)"
+                      type="number"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
+
         <Button type="submit">Submit</Button>
       </form>
     </Form>

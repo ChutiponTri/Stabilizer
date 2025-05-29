@@ -1,129 +1,22 @@
-"use client";
-
-import { getCustomersDetail } from "@/actions/user.action";
-import Create from "@/app/patients/create";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { redirect } from "next/navigation";
 import React from "react";
+import ModePageClient from "./ModePageClient";
 
-function page() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const mode = searchParams.get("mode");
-  if (!mode) return router.push("/");
+function page({ searchParams }: { searchParams: Record<string, string | undefined> }) {
+
+  const mode = searchParams.mode;
+
+  if (!mode) redirect("/");
+
   const check = checkAvailable(mode);
-  if (!check) return router.replace("/");
-
-  const [customers, setCustomers] = React.useState<string[]>([]);
-  const [fetching, setFetching] = React.useState<boolean>(true);
-
-  const fetchCustomers = async () => {
-    try {
-      const customers = await getCustomersDetail();
-      console.log("Fetched", customers);
-      setCustomers(customers);
-    } catch (error) {
-      console.error("Failed to fetch customers", error);
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  React.useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  // Show skeleton loader while fetching
-  if (fetching) {
-    return <ShowSkeleton />;
-  }
-
+  if (!check) redirect("/");
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
-      <div className="lg:col-span-7">
-        {Object.entries(customers).length > 0 ? (
-          Object.entries(customers).map(([id, data]: [string, any]) => (
-            <div key={id} className="flex w-full gap-2 items-center justify-between">
-              <Link href={{ pathname: "/pressure", query: { mode, id } }} className="block w-full">
-                <Card className="w-full mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
-                  <CardHeader>
-                    <CardTitle className="text-xl">Patient ID: {id}</CardTitle>
-                    <CardDescription>{data.gender === "male" ? "👨" : "👩"} {data.age} years old, {data.bmi} BMI</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p>
-                      This patient is a {data.age}-year-old {data.gender} with a height of {data.height} cm and a weight of {data.weight} kg.
-                    </p>
-                    <p>
-                      BMI: {data.bmi} — Medical History: {data.history || "Not specified"}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-            </div>
-          ))
-        ) : (
-          <div>
-            <Card className="w-full mb-0">
-              <CardHeader>
-                <CardTitle className="text-xl">No Patient Found</CardTitle>
-                <CardDescription>Create New Patient to Continue</CardDescription>
-              </CardHeader>
-              <CardContent className="pb-5">
-                <Create onPatientCreated={fetchCustomers} />
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
-
-      <div className="hidden lg:block lg:col-span-3 sticky top-20">
-        <ShowRightBar users={customers} />
-      </div>
-    </div>
+    <ModePageClient mode={mode} />
   );
 }
 
-function ShowSkeleton() {
-  return (
-    <div className="flex items-center space-x-4">
-      <Skeleton className="h-12 w-12 rounded-full" />
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-[250px]" />
-        <Skeleton className="h-4 w-[200px]" />
-      </div>
-    </div>
-  );
-}
-
-function ShowRightBar({ users }: { users: string[] }) {
-
-  if (!Array.isArray(users) || users.length === 0) return null;
-
-  return (
-    <Card>
-      <CardHeader>
-        <Link href="/getdata">
-          <CardTitle className="font-bold">Patients</CardTitle>
-        </Link>
-      </CardHeader>
-      <CardContent className="h-30 overflow-y-auto">
-        <div className="space-y-4">
-          {users.map((user) => (
-            <div key={user} className="flex gap-2 items-center justify-between ">
-              Patient {user}
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function checkAvailable(mode: string) {
+export function checkAvailable(mode: string) {
   const available = [
     "cervical extension", "thoracic extention", "thoracic side-shift to right", "thoracic rotation to right",
     "lumbar flexion", "lumbar extension", "lumbar side-shift to right", "lumbar rotation to right", "custom"

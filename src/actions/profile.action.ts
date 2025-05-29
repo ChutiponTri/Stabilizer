@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { getDbFirebase } from "./firebase.action";
 
-export async function updateProfile(formData: FormData) {
+export async function updateProfile(formData: FormData, username: string) {
   try {
     const { userId: clerkId } = await auth();
     if (!clerkId) throw new Error("Unauthorized");
@@ -21,8 +21,7 @@ export async function updateProfile(formData: FormData) {
       website: website
     }
     const user = await getDbFirebase(`users/${clerkId}`, "", "PATCH", format)
-
-    revalidatePath("/profile");
+    revalidatePath(`/profile/${username}`);
     return { success: true, user };
   } catch (error) {
     console.error("Error updating profile:", error);

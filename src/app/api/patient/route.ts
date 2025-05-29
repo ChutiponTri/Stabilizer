@@ -1,4 +1,4 @@
-import { createCustomer, queryCustomers } from "@/actions/user.action";
+import { adjustCustomer, createCustomer, queryCustomers } from "@/actions/user.action";
 
 export async function GET(request: Request) {
   try {
@@ -22,7 +22,22 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     console.log(body);
-    const response = await createCustomer(body.id, body.age, body.gender, body.birth, body.history, body.weight, body.height, body.bmi);
+    const response = await createCustomer(body.id, body.age, body.gender, body.birth, body.history, body.weight, body.height, body.bmi, body.waist);
+    return Response.json(response);
+  } catch(error) {
+    console.log(error);
+    return Response.json({
+      status: 500,
+      message: error
+    });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    console.log(body);
+    const response = await adjustCustomer(body.id, body.age, body.gender, body.birth, body.history, body.weight, body.height, body.bmi, body.waist);
     return Response.json(response);
   } catch(error) {
     console.log(error);

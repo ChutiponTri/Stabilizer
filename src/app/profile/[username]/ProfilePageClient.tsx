@@ -39,7 +39,7 @@ function ProfilePageClient({
       formData.append(key, value);
     });
 
-    const result = await updateProfile(formData);
+    const result = await updateProfile(formData, user.username);
     if (result.success) {
       setShowEditDialog(false);
       toast.success("Profile updated successfully");
