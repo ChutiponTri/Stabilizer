@@ -1,4 +1,3 @@
-
 import { notFound } from "next/navigation";
 import ProfilePageClient from "./ProfilePageClient";
 import { currentUser } from "@clerk/nextjs/server";
