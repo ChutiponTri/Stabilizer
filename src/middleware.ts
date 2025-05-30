@@ -16,7 +16,7 @@ export default clerkMiddleware((auth, req) => {
 
   const isApi = pathname.startsWith("/api") || pathname.startsWith("/trpc");
   const isStatic = pathname.startsWith("/_next") || /\.(.*)$/.test(pathname);
-  const isAvailable = availablePaths.includes(pathname);
+  const isAvailable = availablePaths.some((value) => pathname.startsWith(value))
 
   if (!isApi && !isStatic && !isAvailable) {
     const url = req.nextUrl.clone();
