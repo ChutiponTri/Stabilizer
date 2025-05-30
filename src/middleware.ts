@@ -13,7 +13,7 @@ export default clerkMiddleware((auth, req: NextRequest) => {
     "/pressure",
   ];
 
-  const isRoot = pathname == "/";
+  const isRoot = pathname === "/";
   const isApi = pathname.startsWith("/api") || pathname.startsWith("/trpc");
   const isStatic = pathname.startsWith("/_next") || /\.(.*)$/.test(pathname);
   const isProfile = pathname.startsWith("/profile/");
