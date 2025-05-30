@@ -20,7 +20,7 @@ export default clerkMiddleware((auth, req: NextRequest) => {
   const isAvailable = availablePaths.some((value) => pathname.startsWith(`${value}/`) || pathname === value);
   console.log("Is Available ->", isAvailable);
 
-  if (!isApi && !isStatic && !isAvailable && !isRoot && !isProfile) {
+  if (!isApi && !isStatic && !isAvailable && !isProfile && !isRoot) {
     const url = req.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
@@ -30,5 +30,5 @@ export default clerkMiddleware((auth, req: NextRequest) => {
 });
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)", ],
+  matcher: ["/((?!_next|.*\\..*).*)"], // ✅ Allows /api/* too
 };
