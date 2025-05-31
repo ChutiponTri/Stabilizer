@@ -3,8 +3,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { getDbFirebase } from "./firebase.action";
 import { revalidateTag } from "next/cache";
-import { z } from "zod";
-import { formSchema } from "@/app/patients/find";
 
 export async function syncUser() {
   try {
