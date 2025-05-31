@@ -4,13 +4,12 @@ import { UserPlusIcon, HomeIcon, UserIcon, DatabaseIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import ModeToggle from "./ThemeToggle";
-import { useAuth, SignInButton, UserButton, useUser } from "@clerk/nextjs";
+import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { syncUser } from "@/actions/user.action";
 import React from "react";
 
 function DesktopNavbar() {
   const { user, isLoaded } = useUser();
-  const { isSignedIn } = useAuth();
   React.useEffect(() => {
     const sync = async () => {
       await syncUser();

@@ -1,26 +1,16 @@
 "use client";
 
-import {
-  UserPlusIcon,
-  HomeIcon,
-  LogOutIcon,
-  MenuIcon,
-  MoonIcon,
-  SunIcon,
-  UserIcon,
-  DatabaseIcon
-} from "lucide-react";
+import { UserPlusIcon, HomeIcon, LogOutIcon, MenuIcon, MoonIcon, SunIcon, UserIcon, DatabaseIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useEffect, useState } from "react";
+import React from "react";
 import { useAuth, SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { syncUser } from "@/actions/user.action";
-import React from "react";
 
 function MobileNavbar() {
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = React.useState(false);
   const { user, isLoaded } = useUser();
   const { isSignedIn } = useAuth();
   const { theme, setTheme } = useTheme();
