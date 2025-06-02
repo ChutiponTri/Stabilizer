@@ -1,7 +1,7 @@
 "use client";
 
-import Chart from "@/components/Chart";
-import RightBar from "@/components/RightBar";
+import Chart from "@/components/Chart"
+import RightBar from "@/components/RightBar"
 import React from "react"
 
 type PageProps = {

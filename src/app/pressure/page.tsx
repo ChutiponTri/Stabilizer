@@ -1,7 +1,7 @@
 import React from "react"
-import { redirect } from "next/navigation";
-import PressureClient from "./PressureClient";
-import { checkAvailableMode } from "@/lib/utils";
+import { redirect } from "next/navigation"
+import PressureClient from "./PressureClient"
+import { checkAvailableMode } from "@/lib/utils"
 
 function page({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const mode = searchParams.mode;
