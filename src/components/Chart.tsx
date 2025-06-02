@@ -45,7 +45,7 @@ type Repetition = {
   total: number,
 };
 
-type RestDuration = {
+type SleepDuration = {
   duration: number,
   flag: boolean,
 };
@@ -76,17 +76,24 @@ function Chart({ params }: PageProps) {
   const [isFinish, setIsFinish] = React.useState<boolean>(false);
   const [isCustom, setIsCustom] = React.useState<boolean>(false);
   const [modes, setModes] = React.useState(initialMode);
+  const [started, setStarted] = React.useState(false);
 
   const mqttRef = React.useRef<MQTT | null>(null);
   const flagRef = React.useRef(flag);
   const startTimeRef = React.useRef(startTime);
+  const startedRef = React.useRef(started);
 
   React.useEffect(() => {
     flagRef.current = flag;                     // Update ref when flag changes
   }, [flag]);
+
   React.useEffect(() => {
     startTimeRef.current = startTime;           // Update ref when startTime changes
   }, [startTime]);
+
+  React.useEffect(() => {
+    startedRef.current = started;
+  }, [started]);
 
   React.useEffect(() => {
     setIsClient(true);
@@ -142,7 +149,7 @@ function Chart({ params }: PageProps) {
 
   React.useEffect(() => {
     const dataCallback = async (data: { pressure?: number; device?: string }) => {
-      if ("pressure" in data && typeof data.pressure === "number" && flagRef.current && !restRef.current.flag) {
+      if ("pressure" in data && typeof data.pressure === "number" && flagRef.current && !sleepRef.current.flag && startedRef.current) {
         const newTimestamp = new Date().toLocaleString();
         let newData: PressureData = { pressure: data.pressure, timestamp: newTimestamp };
         // setData((prevData) => [...prevData, newData]);
@@ -169,7 +176,12 @@ function Chart({ params }: PageProps) {
       }
     };
 
-    const mqttClient = new MQTT(dataCallback);
+    const startCallback = async (flag: boolean) => {
+      setStarted(flag);
+      console.log("Set started");
+    }
+
+    const mqttClient = new MQTT(dataCallback, startCallback);
     mqttRef.current = mqttClient;
     return () => {
       // Clean up MQTT client
@@ -219,7 +231,7 @@ function Chart({ params }: PageProps) {
     total: 5,
   };
 
-  const initialRest: RestDuration = {
+  const initialSleep: SleepDuration = {
     duration: 5,
     flag: false,
   };
@@ -231,8 +243,8 @@ function Chart({ params }: PageProps) {
 
   const [reps, setReps] = React.useState(initialReps);
   const repsRef = React.useRef(reps.remaining);
-  const [rest, setRest] = React.useState(initialRest);
-  const restRef = React.useRef(rest);
+  const [sleep, setSleep] = React.useState(initialSleep);
+  const sleepRef = React.useRef(sleep);
   const [timeLeft, setTimeLeft] = React.useState<TimeData[]>(initialTime);
   const [percent, setPercent] = React.useState<TimeData[]>(initialTime);
   const [isEditing, setIsEditing] = React.useState(false);
@@ -261,20 +273,36 @@ function Chart({ params }: PageProps) {
       remaining: prevReps.total,
     }));
 
-    setRest(prevRest => {
-      const updated = { ...prevRest, flag: false };
-      restRef.current = updated;
+    setSleep(prevSleep => {
+      const updated = { ...prevSleep, flag: false };
+      sleepRef.current = updated;
       return updated;
     });
   }
 
+  const setWaiting = () => {
+    const fillColor = "hsl(210, 100%, 65%)";
+    const seconds = timeValue;
+    const percentage = 10;
+    setTimeLeft(prev => [
+      { ...prev[0], current: seconds, fill: fillColor },
+      { ...prev[1], current: timeValue - seconds }
+    ]);
+
+    setPercent(prev => [
+      { ...prev[0], current: percentage, fill: fillColor },
+      { ...prev[1], current: percentage }
+    ]);
+  }
+
   React.useEffect(() => {
     if (!flag) return;
+    if (flag && !started) return setWaiting();
 
     initPercent();
     const now = Date.now();
     const duration = timeValue * 1000;
-    const restDuration = rest.duration * 1000;
+    const sleepDuration = sleep.duration * 1000;
     let targetEndTime = now + duration;
     setBeginTime(now);
     repsRef.current = reps.remaining;
@@ -283,10 +311,10 @@ function Chart({ params }: PageProps) {
       const current = Date.now();
       const remaining = Math.max(targetEndTime - current, 0);
       const seconds = remaining / 1000;
-      const percentage = (remaining / (restRef.current.flag ? restDuration : duration)) * timeValue;
+      const percentage = (remaining / (sleepRef.current.flag ? sleepDuration : duration)) * timeValue;
 
-      const fillColor = restRef.current.flag
-        ? "hsl(210, 100%, 65%)"  // red for rest
+      const fillColor = sleepRef.current.flag
+        ? "hsl(260, 60%, 70%)"     // purple for sleep
         : "hsl(142, 71%, 45%)";    // green for active
 
       setTimeLeft(prev => [
@@ -300,17 +328,17 @@ function Chart({ params }: PageProps) {
       ]);
       if (seconds <= 0) {
         if (repsRef.current > 1) {
-          if (!restRef.current.flag) {
-            setRest(prevRest => {
+          if (!sleepRef.current.flag) {
+            setSleep(prevRest => {
               const updated = { ...prevRest, flag: true };
-              restRef.current = updated;
+              sleepRef.current = updated;
               return updated;
             });
-            targetEndTime = Date.now() + restDuration;
+            targetEndTime = Date.now() + sleepDuration;
           } else {
-            setRest(prevRest => {
+            setSleep(prevRest => {
               const updated = { ...prevRest, flag: false };
-              restRef.current = updated;
+              sleepRef.current = updated;
               return updated;
             });
             repsRef.current -= 1;
@@ -323,6 +351,7 @@ function Chart({ params }: PageProps) {
         } else {
           clearInterval(interval);
           setFlag(false);
+          setStarted(false);
           setPressure({ pressure: 25 });
           setIsFinish(true);
           setReps(prev => ({ ...prev, remaining: 0 }));
@@ -331,14 +360,15 @@ function Chart({ params }: PageProps) {
     }, 10);
 
     return () => clearInterval(interval);
-  }, [flag, timeValue]);
+  }, [flag, started, timeValue]);
 
   React.useEffect(() => {
-    if (!flag && isFinish) {
+    if (!flag && !started && isFinish) {
       const current = Date.now();
       setEndTime(current);
+      setStarted(false);
     }
-  }, [flag]);
+  }, [flag, started]);
 
   if (!isClient) return null; // Prevents hydration issues
   if (!activeMode) return null;
@@ -375,7 +405,7 @@ function Chart({ params }: PageProps) {
               <Link href={`/modes/${activeMode.label == "lumbar extension" ? "lumbar" : activeMode.label}`}>
                 <CardTitle className="text-2xl font-bold transition-transform duration-200 hover:scale-110 origin-center hover:text-blue-500 cursor-pointer">
                   {activeLabel}
-                  </CardTitle>
+                </CardTitle>
               </Link>
             }
             <CardDescription>Pressure Data in mmHg</CardDescription>
@@ -391,6 +421,7 @@ function Chart({ params }: PageProps) {
                   } else {
                     setData([]);
                     setFlag(true);
+                    setStarted(false);
                     const curTime = new Date().toLocaleString();
                     setTime(curTime);
                     publish();
@@ -399,6 +430,7 @@ function Chart({ params }: PageProps) {
               }}>Start</Button>
               <Button className="h-7 w-full sm:w-[120px]" onClick={() => {
                 setFlag(false);
+                setStarted(false);
                 setPressure({ pressure: 25 });
                 setIsFinish(true);
               }}>Stop</Button>
@@ -543,11 +575,17 @@ function Chart({ params }: PageProps) {
           {/* Left: Status */}
           <div className="flex items-center gap-2">
             <span className="relative flex h-3 w-3">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${flag ? 'bg-green-400' : 'bg-red-400'} opacity-75`} />
-              <span className={`relative inline-flex rounded-full h-3 w-3 ${flag ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${flag ?
+                (started ?
+                  (sleep.flag ? "bg-purple-500" : "bg-green-400") : "bg-blue-500") : "bg-red-400"} opacity-75`}
+              />
+              <span className={`relative inline-flex rounded-full h-3 w-3 ${flag ?
+                (started ?
+                  (sleep.flag ? "bg-purple-500" : "bg-green-500") : "bg-blue-500") : "bg-red-500"}`}
+              />
             </span>
-            <span className={flag ? "text-green-700" : "text-red-700"}>
-              {flag ? "Started" : "Stopped"}
+            <span className={flag ? (started ? (sleep.flag ? "text-purple-700" : "text-green-700") : "text-blue-700") : "text-red-700"}>
+              {flag ? (started ? (sleep.flag ? "Resting" : "Started") : "Waiting for Device") : "Stopped"}
             </span>
           </div>
 
@@ -603,7 +641,7 @@ function Chart({ params }: PageProps) {
 
       <Custom modes={modes} isCustom={isCustom} setModes={setModes} setIsCustom={setIsCustom} />
 
-      <Timer timer={timer} onSubmit={handleTime} isEditing={isEditing} setTimeValue={setTimeValue} setInitTimer={setInitTimer} rest={rest.duration} setRest={setRest} reps={reps.total} setReps={setReps} setIsEditing={setIsEditing} />
+      <Timer timer={timer} onSubmit={handleTime} isEditing={isEditing} setTimeValue={setTimeValue} setInitTimer={setInitTimer} sleep={sleep.duration} setSleep={setSleep} reps={reps.total} setReps={setReps} setIsEditing={setIsEditing} />
 
     </div>
   );
@@ -664,7 +702,7 @@ function Custom({ modes, isCustom, setModes, setIsCustom }: {
   setModes: React.Dispatch<React.SetStateAction<Modes[]>>
   setIsCustom: React.Dispatch<React.SetStateAction<boolean>>
 }) {
-  const custom = modes.find(mode => mode.label === "Custom");
+  const custom = modes.find(mode => mode.label === "custom");
   const maxPressure = React.useRef<HTMLInputElement>(null);
   const minPressure = React.useRef<HTMLInputElement>(null);
   return (
@@ -697,7 +735,7 @@ function Custom({ modes, isCustom, setModes, setIsCustom }: {
             const max = maxPressure.current?.valueAsNumber;
             if (!min || !max) toast.error("Please Fill the Pressure Values");
             else {
-              const updated = modes.map(mode => mode.label === "Custom" ? { ...mode, min: min, max: max } : mode)
+              const updated = modes.map(mode => mode.label === "custom" ? { ...mode, min: min, max: max } : mode)
               setModes(updated);
               toast.success("Updated Pressure Values");
             }
@@ -709,21 +747,21 @@ function Custom({ modes, isCustom, setModes, setIsCustom }: {
   )
 }
 
-function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, rest, setRest, reps, setReps, setIsEditing }: {
+function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, sleep, setSleep, reps, setReps, setIsEditing }: {
   timer: number
   onSubmit?: (newTime: number) => void,
   isEditing: boolean,
   setTimeValue: React.Dispatch<React.SetStateAction<number>>,
   setInitTimer: React.Dispatch<React.SetStateAction<number>>,
-  rest: number,
-  setRest: React.Dispatch<React.SetStateAction<RestDuration>>,
+  sleep: number,
+  setSleep: React.Dispatch<React.SetStateAction<SleepDuration>>,
   reps: number,
   setReps: React.Dispatch<React.SetStateAction<Repetition>>,
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>,
 }) {
   const timeInput = React.useRef<HTMLInputElement>(null);
   const repsInput = React.useRef<HTMLInputElement>(null);
-  const restInput = React.useRef<HTMLInputElement>(null);
+  const sleepInput = React.useRef<HTMLInputElement>(null);
   return (
     <Dialog open={isEditing} onOpenChange={setIsEditing}>
       <DialogContent className="sm:max-w-[500px]">
@@ -761,11 +799,11 @@ function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, rest, s
             <div className="justify-self-end text-right pt-1">Set Resting Timer (Secs):</div>
             <Input
               placeholder="seconds"
-              ref={restInput}
+              ref={sleepInput}
               type="number"
               min={1}
               max={100}
-              defaultValue={rest}
+              defaultValue={sleep}
               className="h-10"
             />
           </div>
@@ -779,12 +817,12 @@ function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, rest, s
             setIsEditing(false);
             const newTime = timeInput.current?.valueAsNumber;
             const newReps = repsInput.current?.valueAsNumber;
-            const newRest = restInput.current?.valueAsNumber;
+            const newRest = sleepInput.current?.valueAsNumber;
             if (!newTime || !newReps || !newRest) toast.error("Please Fill the Time Duration");
             else {
               setInitTimer(newTime);
               setTimeValue(newTime);
-              setRest((prev) => ({ ...prev, duration: newRest }));
+              setSleep((prev) => ({ ...prev, duration: newRest }));
               setReps((prev) => ({ remaining: newReps, total: newReps }));
               if (onSubmit) onSubmit(newTime);
               toast.success("Updated Timer Duration");

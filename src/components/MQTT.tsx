@@ -6,21 +6,28 @@ import mqtt, { MqttClient } from "mqtt";
 class MQTT {
   client!: MqttClient;
   callback: (data: any) => void;
+  startCallback: (flag: boolean) => void;
   data_topic: string = "";
   cmd_topic: string = "";
+  start_topic: string = "";
   pair_topic: string;
   dev_topic: string;
   dev_name:  string = "";
   isInitialized: boolean = false;
 
-  constructor(dataCallback: (data: any) => void) {
+  constructor(
+    dataCallback: (data: any) => void, 
+    startCallback: (flag: boolean) => void
+  ) {
     this.data_topic = process.env.NEXT_PUBLIC_DATA_TOPIC || "undefined";
     this.cmd_topic = process.env.NEXT_PUBLIC_CMD_TOPIC || "undefined";
     this.pair_topic = process.env.NEXT_PUBLIC_PAIR_TOPIC || "undefined";
     this.dev_topic = process.env.NEXT_PUBLIC_DEV_TOPIC || "undefined";
+    this.start_topic = process.env.NEXT_PUBLIC_START_TOPIC || "undefined";
     if ( this.pair_topic === "undefined" || this.dev_topic === "undefined") throw new Error("MQTT Topic not found");
     
     this.callback = dataCallback;
+    this.startCallback = startCallback;
     this.connectMQTT();
     this.init();
   }
@@ -33,17 +40,21 @@ class MQTT {
         this.dev_name = newDevName;
         const newDataTopic = `${process.env.NEXT_PUBLIC_DATA_TOPIC}/${this.dev_name}`;
         const newCmdTopic = `${process.env.NEXT_PUBLIC_CMD_TOPIC}/${this.dev_name}`;
+        const newStartTopic = `${process.env.NEXT_PUBLIC_START_TOPIC}/${this.dev_name}`;
 
         // Unsubscribe old topics if already initialized
         if (this.isInitialized && this.data_topic && this.cmd_topic) {
           this.client.unsubscribe(this.data_topic);
           this.client.unsubscribe(this.cmd_topic);
+          this.client.unsubscribe(this.start_topic);
         }
 
         // Update topics and subscribe
         this.data_topic = newDataTopic;
         this.cmd_topic = newCmdTopic;
+        this.start_topic = newStartTopic;
         this.subscribeToDynamicTopics();
+        console.log("Start Topic ->", this.start_topic);
 
         this.isInitialized = true;
       }
@@ -75,6 +86,7 @@ class MQTT {
   private subscribeToDynamicTopics() {
     this.client.subscribe(this.data_topic, this.handleSubResult("Data"));
     this.client.subscribe(this.cmd_topic, this.handleSubResult("Command"));
+    this.client.subscribe(this.start_topic, this.handleSubResult("Start"));
   }
 
   private handleSubResult(name: string) {
@@ -95,7 +107,10 @@ class MQTT {
       } else if (topic === this.dev_topic && payload.device !== undefined) {
         console.log("Device updated from broker:", payload);
         this.callback(payload);
-      }
+      } else if (topic === this.start_topic && payload.start === true) {
+        console.log("Start flag from Device:", payload);
+        this.startCallback(payload.start);
+      } 
     } catch (error) {
       console.error("Failed to parse MQTT message:", error);
     }
