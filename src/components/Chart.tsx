@@ -190,10 +190,10 @@ function Chart({ params }: PageProps) {
 
   const publish = () => {
     if (!isClient || !activeLabel || !mqttRef.current) return;
-    const cervicalMax = modes.find(mode => activeLabel.toLowerCase().includes(mode.label))?.max || 0;
-    if (cervicalMax == 0) return;
-    mqttRef.current.publish(cervicalMax, activeLabel);
-    console.log("Start: MQTT published →", cervicalMax, "mode →", activeLabel);
+    const modePressure = modes.find(mode => activeLabel.toLowerCase().includes(mode.label))?.min || 0;
+    if (modePressure == 0) return;
+    mqttRef.current.publish(modePressure, activeLabel);
+    console.log("Start: MQTT published →", modePressure, "mode →", activeLabel);
   }
 
   const pair = () => {
