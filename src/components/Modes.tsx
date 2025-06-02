@@ -21,7 +21,7 @@ function Modes() {
   return (
     <div className="columns-2">
       <div>
-        <Link href={{pathname: "/modes", query:{ mode: "Cervical Extension"}}} className="block" >
+        <Link href={{pathname: "/modes", query:{ mode: "Cervical Flexion"}}} className="block" >
           <Card className="w-full mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
             <CardHeader>
               <CardTitle>Cervical Mode</CardTitle>

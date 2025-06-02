@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function checkAvailableMode(mode: string) {
   const available = [
-    "cervical extension", "thoracic extention", "thoracic side-shift to right", "thoracic rotation to right",
+    "cervical flexion", "thoracic extention", "thoracic side-shift to right", "thoracic rotation to right",
     "lumbar flexion", "lumbar extension", "lumbar side-shift to right", "lumbar rotation to right", "custom"
   ];
   if (!available.includes(mode.toLowerCase())) {
