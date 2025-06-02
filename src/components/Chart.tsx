@@ -4,15 +4,15 @@ import * as React from "react"
 import { PieChart, Pie, Label as PieLabel, Cell } from "recharts"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import MQTT from "./MQTT"
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, } from "@/components/ui/dialog"
 import { Button } from "./ui/button"
 import { queryCustomers } from "@/actions/user.action"
 import { getDevice, saveDevice, storeData } from "@/actions/data.action"
 import { warning } from "@/utils/toastUtils"
 import toast from "react-hot-toast"
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Label } from "./ui/label";
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { Label } from "./ui/label"
 import { Input } from "./ui/input"
 
 const maxPressure = 100;
