@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useWatch } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { DatePicker } from "@/components/date-picker"
+import { redirect } from "next/navigation"
 
 const formSchema = z.object({
   id: z.string().min(1),
@@ -29,6 +30,8 @@ const formSchema = z.object({
 });
 
 function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
+
+  const [submit, setSubmit] = React.useState(false);
 
   const genders = [
     { label: "Male", value: "male" },
@@ -61,6 +64,13 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
     }
   }, [birth, form]);
 
+  React.useEffect(() => {
+    if (submit) {
+      setSubmit(false);
+      return redirect("/patients");
+    }
+  }, [submit]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       console.log("submitted", values);
@@ -78,7 +88,7 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
       } else {
         toast.success("Patient Registered Successfully");
         onPatientCreated?.();
-
+        setSubmit(true);
       }
 
       console.log(data);
