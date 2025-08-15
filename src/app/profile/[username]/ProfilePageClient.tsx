@@ -1,7 +1,6 @@
 "use client";
 
-import { updateProfile } from "@/actions/profile.action";
-import { getUserByClerkId } from "@/actions/user.action";
+import { getProfileByUsername, updateProfile } from "@/actions/profile.action";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +14,7 @@ import React from "react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
-type User = Awaited<ReturnType<typeof getUserByClerkId>>;
+type User = Awaited<ReturnType<typeof getProfileByUsername>>;
 
 interface ProfilePageClientProps {
   user: NonNullable<User>;
