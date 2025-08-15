@@ -2,9 +2,14 @@ import { notFound } from "next/navigation";
 import ProfilePageClient from "./ProfilePageClient";
 import { getProfileByUsername } from "@/actions/profile.action";
 
-export async function generateMetadata({ params }: { params: { username: string } }) {
-  const user = await getProfileByUsername(params.username);
-  if (!user) return;
+export async function generateMetadata() {
+  const user = await getProfileByUsername();
+  if (!user) {
+    return {
+      title: "Profile not found",
+      description: "This profile does not exist.",
+    };
+  }
 
   return {
     title: `${user.name ?? user.username}`,
@@ -12,8 +17,8 @@ export async function generateMetadata({ params }: { params: { username: string 
   };
 }
 
-async function ProfilePageServer({ params }: { params: { username: string } }) {
-  const user = await getProfileByUsername(params.username);
+async function ProfilePageServer() {
+  const user = await getProfileByUsername();
   console.log("user is : ", user);
   if (!user) notFound();
 

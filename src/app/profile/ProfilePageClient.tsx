@@ -33,10 +33,6 @@ function ProfilePageClient({
     website: user.website || "",
   });
 
-  React.useEffect(() => {
-    console.log("Started");
-  }, []);
-
   const handleEditSubmit = async () => {
     const formData = new FormData();
     Object.entries(editForm).forEach(([key, value]) => {

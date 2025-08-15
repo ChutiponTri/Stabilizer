@@ -8,6 +8,8 @@ import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { syncUser } from "@/actions/user.action";
 import React from "react";
 
+// `/profile/${user.username ?? user.emailAddresses[0].emailAddress.split("@")[0]}`
+
 function DesktopNavbar() {
   const { user, isLoaded } = useUser();
   React.useEffect(() => {
@@ -44,8 +46,7 @@ function DesktopNavbar() {
           </Button>
           <Button variant="ghost" className="flex items-center gap-2" asChild>
             <Link
-              href={`/profile/${user.username ?? user.emailAddresses[0].emailAddress.split("@")[0]
-                }`}
+              href="/profile"
             >
               <UserIcon className="w-4 h-4" />
               <span className="hidden lg:inline">Profile</span>

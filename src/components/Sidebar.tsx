@@ -1,4 +1,3 @@
-import { currentUser } from "@clerk/nextjs/server";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Button } from "./ui/button";
@@ -8,6 +7,7 @@ import { Avatar, AvatarImage } from "./ui/avatar";
 import { Separator } from "./ui/separator";
 import { LinkIcon, MapPinIcon } from "lucide-react";
 import { getDevice } from "@/actions/data.action";
+import { currentUser } from "@clerk/nextjs/server";
 
 async function Sidebar() {
   const authUser = await currentUser();

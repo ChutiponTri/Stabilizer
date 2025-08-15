@@ -29,7 +29,7 @@ export async function updateProfile(formData: FormData, username: string) {
   }
 }
 
-export async function getProfileByUsername(username: string) {
+export async function getProfileByUsername() {
   try {
     const { userId } = await auth();
     const user = await currentUser();

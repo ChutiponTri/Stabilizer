@@ -11,16 +11,17 @@ export default clerkMiddleware((auth, req: NextRequest) => {
     "/getdata",
     "/patients",
     "/pressure",
+    "/profile"
   ];
 
   const isRoot = pathname === "/";
   const isApi = pathname.startsWith("/api") || pathname.startsWith("/trpc");
   const isStatic = pathname.startsWith("/_next") || /\.(.*)$/.test(pathname);
-  const isProfile = pathname.startsWith("/profile/");
+  // const isProfile = pathname.startsWith("/profile/");
   const isAvailable = availablePaths.some((value) => pathname.startsWith(`${value}/`) || pathname === value);
   console.log("Is Available ->", isAvailable);
 
-  if (!isApi && !isStatic && !isAvailable && !isProfile && !isRoot) {
+  if (!isApi && !isStatic && !isAvailable && !isRoot) {
     const url = req.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);

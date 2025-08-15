@@ -48,7 +48,6 @@ export async function getUserByClerkId(clerkId: string) {
 
     // Check if data exists
     if (response) {
-      console.log(`Clerk User : ${response}`);
       return response;
     } else {
       return
@@ -103,7 +102,7 @@ export async function getCustomersDetail() {
         revalidate: false,
         tags: [`customers-${userId}`]
       });
-      
+
       return response;
 
     } catch (error) {
@@ -202,15 +201,15 @@ export async function adjustCustomer(
     try {
 
       const customer = {
-          age: age,
-          gender: gender,
-          birth: birth,
-          history: history,
-          weight: weight,
-          height: height,
-          bmi: bmi,
-          waist: waist
-        };
+        age: age,
+        gender: gender,
+        birth: birth,
+        history: history,
+        weight: weight,
+        height: height,
+        bmi: bmi,
+        waist: waist
+      };
       const response = await getDbFirebase(`customers/${userId}/${id.toLowerCase()}`, "", "PUT", customer);
 
       revalidateTag(`customers-${userId}`)
