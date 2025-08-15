@@ -63,14 +63,14 @@ export async function getCustomers() {
     const { userId } = await auth();
     const user = await currentUser();
 
-    if (!userId || !user) return [String(user)];
+    if (!userId || !user) return [String(userId)];
 
     try {
       const response = await getDbFirebase(`customers/${userId}`, "shallow=true", "GET", null, {
         revalidate: false,
         tags: [`customer-list-${userId}`]
       });
-      const keys = response && typeof response === "object" ? Object.keys(response) : [String(user)];
+      const keys = response && typeof response === "object" ? Object.keys(response) : ["Opps"];
 
       // Check if data exists
       if (keys.length > 0) {
