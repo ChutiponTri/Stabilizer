@@ -19,7 +19,7 @@ function MobileNavbar() {
       await syncUser();
     }
     sync();
-  }, [])
+  }, []);
 
   return (
     <div className="flex md:hidden items-center space-x-2">
@@ -42,7 +42,7 @@ function MobileNavbar() {
         </SheetTrigger>
         <SheetContent side="right" className="w-[300px]">
           <SheetHeader>
-            <SheetTitle>Menu</SheetTitle>
+            <SheetTitle>{user?.fullName}</SheetTitle>
           </SheetHeader>
           <nav className="flex flex-col space-y-4 mt-6">
             <Button variant="ghost" className="flex items-center gap-3 justify-start" asChild>
