@@ -107,9 +107,12 @@ class MQTT {
       } else if (topic === this.dev_topic && payload.device !== undefined) {
         console.log("Device updated from broker:", payload);
         this.callback(payload);
-      } else if (topic === this.start_topic && payload.start === true) {
+      } else if (topic === this.start_topic && payload.start === 1) {
         console.log("Start flag from Device:", payload);
         this.startCallback(payload.start);
+      }  else if (topic === this.start_topic) {
+        console.log("Start Flag Trouble Test:", payload);
+        console.log(payload.start, typeof payload.start);
       } 
     } catch (error) {
       console.error("Failed to parse MQTT message:", error);
