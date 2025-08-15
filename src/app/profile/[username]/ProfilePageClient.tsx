@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SignInButton, useUser } from "@clerk/nextjs";
 import { CalendarIcon, EditIcon, FileTextIcon, HeartIcon, LinkIcon, MapPinIcon } from "lucide-react";
+import React from "react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
@@ -32,6 +33,10 @@ function ProfilePageClient({
     location: user.location || "",
     website: user.website || "",
   });
+
+  React.useEffect(() => {
+    console.log("Started");
+  }, []);
 
   const handleEditSubmit = async () => {
     const formData = new FormData();
