@@ -17,6 +17,7 @@ import { toast } from "react-hot-toast";
 import { DatePicker } from "@/components/date-picker"
 import { getCustomers } from "@/actions/user.action"
 import { Skeleton } from "@/components/ui/skeleton"
+import Create from "./create"
 
 export const formSchema = z.object({
   id: z.string().min(1),
@@ -189,6 +190,8 @@ function Find() {
       });
     }
   }, [flag, data, form]);
+
+  if (!fetching && patientList.length == 0) return <Create />
 
   return (
     fetching ? (
