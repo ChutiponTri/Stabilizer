@@ -14,6 +14,7 @@ function MobileNavbar() {
   const { user, isLoaded } = useUser();
   const { isSignedIn } = useAuth();
   const { theme, setTheme } = useTheme();
+  
   React.useEffect(() => {
     const sync = async () => {
       await syncUser();
