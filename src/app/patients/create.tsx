@@ -61,35 +61,33 @@ function Create({ onPatientCreated }: { onPatientCreated?: () => void }) {
     }
   }, [birth, form]);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       console.log("submitted", values);
 
-      const fetchData = async () => {
-        try {
-          const resp = await fetch("api/patient", {
-            method: "POST",
-            body: JSON.stringify(values)
-          });
-          const data = await resp.json();
-          if ("exist" in data) {
-            toast.error("Patient already Exist");
-          } else {
-            toast.success("Patient Register Successfully");
-            onPatientCreated?.();
-          }
-          console.log(data);
-        } catch (error) {
-          console.error("Error fetching data:", error);
-        }
-      };
-      fetchData();
+      const resp = await fetch("/api/patient", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values)
+      });
 
+      const data = await resp.json();
+
+      if ("exist" in data) {
+        toast.error("Patient already Exist");
+      } else {
+        toast.success("Patient Registered Successfully");
+        onPatientCreated?.();
+
+      }
+
+      console.log(data);
     } catch (error) {
       console.error("Form submission error", error);
       toast.error("Failed to submit the form. Please try again.");
     }
   }
+
 
   return (
     <Form {...form}>
