@@ -70,7 +70,7 @@ export async function getCustomers() {
         revalidate: false,
         tags: [`customer-list-${userId}`]
       });
-      const keys = response && typeof response === "object" ? Object.keys(response) : [response];
+      const keys = response && typeof response === "object" ? Object.keys(response) : [String(userId)];
 
       // Check if data exists
       if (keys.length > 0) {
