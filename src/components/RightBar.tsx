@@ -11,7 +11,7 @@ function RightBar() {
     const fetchCustomers = async () => {
       try {
         const customers = await getCustomers();
-        console.log("Fetched customers:", customers);
+        console.log("Fetched customers right bar:", customers);
         setCustomers(customers); // Set the fetched customers in the state
       } catch (error) {
         console.error("Failed to fetch customers", error);

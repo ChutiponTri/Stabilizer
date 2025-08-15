@@ -8,36 +8,20 @@ import Link from "next/link";
 import React from "react";
 
 function ModePageClient({ mode }: { mode: string }) {
-  const [customers, setCustomers] = React.useState<Record<string, any>>({});
+  const [customers, setCustomers] = React.useState<string[]>([]);
   const [fetching, setFetching] = React.useState<boolean>(true);
 
   const fetchCustomers = async () => {
     try {
-      const data = await getCustomersDetail();
-      // Ensure the shape is always an object
-      if (data && typeof data === "object" && !Array.isArray(data)) {
-        setCustomers(data);
-      } else {
-        setCustomers({});
-      }
+      const customers = await getCustomersDetail() || [];
+      console.log("Fetched customer Mode.tsx", customers);
+      setCustomers(customers);
     } catch (error) {
       console.error("Failed to fetch customers", error);
-      setCustomers({});
     } finally {
       setFetching(false);
     }
   };
-  // const fetchCustomers = async () => {
-  //   try {
-  //     const customers = await getCustomersDetail();
-  //     console.log("Fetched", customers);
-  //     setCustomers(customers);
-  //   } catch (error) {
-  //     console.error("Failed to fetch customers", error);
-  //   } finally {
-  //     setFetching(false);
-  //   }
-  // };
 
   React.useEffect(() => {
     fetchCustomers();
@@ -88,7 +72,7 @@ function ModePageClient({ mode }: { mode: string }) {
       </div>
 
       <div className="hidden lg:block lg:col-span-3 sticky top-20">
-        <ShowRightBar users={Object.keys(customers)} />
+        <ShowRightBar users={customers} />
       </div>
     </div>
   );
