@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: { username: string 
 
 async function ProfilePageServer({ params }: { params: { username: string } }) {
   const authUser = await currentUser();
-  if (!authUser) return;
+  if (!authUser) notFound();
   
   const user = await getUserByClerkId(authUser.id);
   console.log("user is : ", user);
