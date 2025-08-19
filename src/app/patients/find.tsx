@@ -18,6 +18,7 @@ import { DatePicker } from "@/components/date-picker"
 import { getCustomers } from "@/actions/user.action"
 import { Skeleton } from "@/components/ui/skeleton"
 import Create from "./create"
+import { redirect } from "next/navigation"
 
 export const formSchema = z.object({
   id: z.string().min(1),
@@ -169,6 +170,7 @@ function Find() {
       fetchData();
 
       toast.success("Patient Data Update Successfully");
+      redirect("/patients");
     } catch (error) {
       console.error("Form submission error", error);
       toast.error("Failed to submit the form. Please try again.");
