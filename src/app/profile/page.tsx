@@ -2,7 +2,10 @@ import { notFound } from "next/navigation";
 import ProfilePageClient from "./ProfilePageClient";
 import { getProfileByUsername } from "@/actions/profile.action";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata() {
+  "use server"; // ensure it's a server function
   const user = await getProfileByUsername();
   if (!user) {
     return {
