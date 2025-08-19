@@ -74,7 +74,7 @@ export async function getCustomers() {
       // Check if data exists
       if (keys.length > 0) {
         console.log("Shallow Query:", keys);
-        return keys;
+        return keys ?? [];
       } else {
         console.log("No customers")
         return [];
@@ -95,7 +95,7 @@ export async function getCustomersDetail() {
     const { userId } = await auth();
     const user = await currentUser();
 
-    if (!userId || !user) return [];
+    if (!userId || !user) return {};
 
     try {
       const response = await getDbFirebase(`customers/${userId}`, "shallow=false", "GET", null, {
@@ -103,15 +103,15 @@ export async function getCustomersDetail() {
         tags: [`customers-${userId}`]
       });
 
-      return response;
+      return response ?? {};
 
     } catch (error) {
       console.error('Error checking if user exists:', error);
-      return [];
+      return {};
     }
   } catch (error) {
     console.log("Error in syncUser", error);
-    return [];
+    return {};
   }
 }
 
