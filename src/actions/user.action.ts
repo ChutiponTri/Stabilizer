@@ -230,3 +230,27 @@ export async function adjustCustomer(
     console.log("Error in syncUser", error);
   }
 }
+
+export async function deleteCustomer(id: string) {
+  try {
+    const { userId } = await auth();
+    const user = await currentUser();
+
+    if (!userId || !user) return { status: 404, message: "User not found" };
+
+    try {
+
+      const response = await getDbFirebase(`customers/${userId}/${id.toLowerCase()}`, "", "DELETE");
+
+      revalidateTag(`customers-${userId}`)
+      revalidateTag(`customer-list-${userId}`)
+      return { status: "ok", message: "Insert Patient Success" };
+    } catch (error) {
+      console.error('Error checking if user exists:', error);
+      return { status: "not ok", message: error };
+    }
+
+  } catch (error) {
+    console.log("Error in syncUser", error);
+  }
+}

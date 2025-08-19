@@ -1,4 +1,4 @@
-import { adjustCustomer, createCustomer, queryCustomers } from "@/actions/user.action";
+import { adjustCustomer, createCustomer, deleteCustomer, queryCustomers } from "@/actions/user.action";
 
 export async function GET(request: Request) {
   try {
@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const response = await queryCustomers(id);
     console.log("Return", response);
     return Response.json(response);
-  } catch(error) {
+  } catch (error) {
     console.log(error);
     return Response.json({
       status: 500,
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     console.log(body);
     const response = await createCustomer(body.id, body.age, body.gender, body.birth, body.history, body.weight, body.height, body.bmi, body.waist);
     return Response.json(response);
-  } catch(error) {
+  } catch (error) {
     console.log(error);
     return Response.json({
       status: 500,
@@ -39,7 +39,22 @@ export async function PUT(request: Request) {
     console.log(body);
     const response = await adjustCustomer(body.id, body.age, body.gender, body.birth, body.history, body.weight, body.height, body.bmi, body.waist);
     return Response.json(response);
-  } catch(error) {
+  } catch (error) {
+    console.log(error);
+    return Response.json({
+      status: 500,
+      message: error
+    });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json();
+    console.log("Body is", body);
+    const response = await deleteCustomer(body.id);
+    return Response.json(response);
+  } catch (error) {
     console.log(error);
     return Response.json({
       status: 500,

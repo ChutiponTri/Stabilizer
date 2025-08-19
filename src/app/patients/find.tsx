@@ -99,7 +99,6 @@ function Find() {
     }
   }, [birth, form]);
 
-
   async function fetchCustomer(id: string) {
     try {
       const resp = await fetch(`api/patient?id=${id}`, {
@@ -174,6 +173,24 @@ function Find() {
     } catch (error) {
       console.error("Form submission error", error);
       toast.error("Failed to submit the form. Please try again.");
+    }
+  }
+
+  async function deleteCustomer(id: string) {
+    try {
+      const resp = await fetch(`api/patient`, {
+        method: "DELETE",
+        body: JSON.stringify({ "id": id })
+      });
+
+      if (!resp.ok) throw new Error("Failed to delete patient");
+
+      toast.success(`Patient ${id} deleted successfully`);
+      setFlag(false);
+      setRevalidate(true); // refresh patient list
+    } catch (error) {
+      console.error("Error deleting patient:", error);
+      toast.error("Failed to delete patient");
     }
   }
 
@@ -426,14 +443,14 @@ function Find() {
               </div>
 
               <div className="col-span-3">
-                <FormField 
+                <FormField
                   control={form.control}
                   name="waist"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Waist (cm)</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           placeholder="Input Waist (cm)"
                           type="number"
                           {...field}
@@ -448,10 +465,15 @@ function Find() {
 
             <div className="space-x-2">
               <Button type="submit">Submit</Button>
-              <Button type="button" variant={"destructive"} onClick={() => setFlag(false)}>Cancel</Button>
-            </div>
-          </form>
-        </Form>)
+              <Button type="button" variant={"secondary"} onClick={() => setFlag(false)}>Cancel</Button>
+              <Button type="button" variant={"destructive"} onClick={() => {
+                if (data?.id && window.confirm("Are you sure you want to delete this patient?")) {
+                  deleteCustomer(data.id);
+                }
+              }}>Delete</Button>
+          </div>
+        </form>
+        </Form >)
   )
 }
 
