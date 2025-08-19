@@ -8,7 +8,7 @@ import Link from "next/link";
 import React from "react";
 
 function ModePageClient({ mode }: { mode: string }) {
-  const [customers, setCustomers] = React.useState<string[]>([]);
+  const [customers, setCustomers] = React.useState<Record<string, any>>({});
   const [fetching, setFetching] = React.useState<boolean>(true);
 
   const fetchCustomers = async () => {
@@ -90,9 +90,10 @@ function ShowSkeleton() {
   );
 }
 
-function ShowRightBar({ users }: { users: string[] }) {
+function ShowRightBar({ users }: { users: Record<string, any> }) {
 
-  if (!Array.isArray(users) || users.length === 0) return null;
+  const entries = Object.entries(users);
+  if (entries.length === 0) return null;
 
   return (
     <Card>
@@ -103,9 +104,9 @@ function ShowRightBar({ users }: { users: string[] }) {
       </CardHeader>
       <CardContent className="h-30 overflow-y-auto">
         <div className="space-y-4">
-          {users.map((user) => (
-            <div key={user} className="flex gap-2 items-center justify-between ">
-              Patient {user}
+          {entries.map(([id, user]) => (
+            <div key={id} className="flex gap-2 items-center justify-between ">
+              Patient {id}
             </div>
           ))}
         </div>
