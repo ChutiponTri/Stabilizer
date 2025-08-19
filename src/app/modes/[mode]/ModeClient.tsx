@@ -21,7 +21,6 @@ const ModeConfig = {
     { label: "Lumbar Side-Shift to Right", href: "/modes/lumbar-shift.png", dark: "/modes/lumbar-shift-dark.png" },
     { label: "Lumbar Rotation to Right", href: "/modes/lumbar-rot.png", dark: "/modes/lumbar-rot-dark.png" }
   ]
-
 }
 
 function ModeClient({ mode }: { mode: string }) {

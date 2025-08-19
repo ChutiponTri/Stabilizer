@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import MQTT from "./MQTT"
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, } from "@/components/ui/dialog"
 import { Button } from "./ui/button"
-import { queryCustomers } from "@/actions/user.action"
+import { getCustomers, queryCustomers } from "@/actions/user.action"
 import { getDevice, saveDevice, storeData } from "@/actions/data.action"
 import { warning } from "@/utils/toastUtils"
 import toast from "react-hot-toast"
@@ -102,7 +102,9 @@ function Chart({ params }: PageProps) {
         const patient = await queryCustomers(patientId);
         console.log("Patient?", patient);
         if (!patient) {
+          toast.error("Patient does not exist, please try again");
           router.replace("/");
+          const resp = await getCustomers(true);
         }
       } catch (error) {
         console.error("Error fetching customers:", error);

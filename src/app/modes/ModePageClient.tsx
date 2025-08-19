@@ -16,7 +16,7 @@ function ModePageClient({ mode }: { mode: string }) {
 
     if (Array.isArray(response)) {
       return response.reduce((acc: Record<string, any>, item, idx) => {
-        if (item) acc[`ID-${idx}`] = item; 
+        if (item) acc[`${idx}`] = item; 
         return acc;
       }, {});
     }

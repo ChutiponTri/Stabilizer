@@ -15,3 +15,18 @@ export function checkAvailableMode(mode: string) {
   }
   return true;
 }
+
+
+const ModeConfig = {
+  thoracic: [
+    { label: "Thoracic Extension", href: "/modes/thoracic-ext.png", dark: "/modes/thoracic-ext-dark.png" },
+    { label: "Thoracic Side-Shift to Right", href: "/modes/thoracic-shift.png", dark: "/modes/thoracic-shift-dark.png" },
+    { label: "Thoracic Rotation to Right", href: "/modes/thoracic-rot.png", dark: "/modes/thoracic-rot-dark.png" }
+  ],
+  lumbar: [
+    { label: "Lumbar Flexion", href: "/modes/lumbar-flex.png", dark: "/modes/lumbar-flex-dark.png" },
+    { label: "Lumbar Extension", href: "/modes/lumbar-ext.png", dark: "/modes/lumbar-ext-dark.png" },
+    { label: "Lumbar Side-Shift to Right", href: "/modes/lumbar-shift.png", dark: "/modes/lumbar-shift-dark.png" },
+    { label: "Lumbar Rotation to Right", href: "/modes/lumbar-rot.png", dark: "/modes/lumbar-rot-dark.png" }
+  ]
+}

@@ -220,7 +220,7 @@ function Find() {
               ))}
             </div>
             <div className="py-2 flex justify-center">
-              <Button type="button" variant={"secondary"} onClick={() => setRefresh(!refresh)}>Refresh</Button>
+              <Button type="button" variant={"secondary"} onClick={() => setRevalidate(true)}>Refresh</Button>
             </div>
           </div>
         )

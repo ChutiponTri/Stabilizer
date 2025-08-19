@@ -64,7 +64,11 @@ export async function getCustomers(revalidate: boolean) {
 
     if (!userId || !user) return [];
 
-    if (revalidate) revalidateTag(`customer-list-${userId}`)
+    if (revalidate) {
+      revalidateTag(`customer-list-${userId}`);
+      revalidateTag(`customers-${userId}`)
+      console.log(`Revalidate tag of ${userId}`)
+    }
 
     try {
       const response = await getDbFirebase(`customers/${userId}`, "shallow=true", "GET", null, {
