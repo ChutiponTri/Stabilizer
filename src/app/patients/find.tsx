@@ -168,9 +168,8 @@ function Find() {
         }
       };
       fetchData();
-
+      setRefresh(true);
       toast.success("Patient Data Update Successfully");
-      redirect("/patients");
     } catch (error) {
       console.error("Form submission error", error);
       toast.error("Failed to submit the form. Please try again.");
