@@ -11,9 +11,25 @@ function ModePageClient({ mode }: { mode: string }) {
   const [customers, setCustomers] = React.useState<Record<string, any>>({});
   const [fetching, setFetching] = React.useState<boolean>(true);
 
+  function normalizeCustomers(response: any): Record<string, any> {
+    if (!response) return {};
+
+    if (Array.isArray(response)) {
+      return response.reduce((acc: Record<string, any>, item, idx) => {
+        if (item) acc[`cust-${idx}`] = item; // give a fake ID if needed
+        return acc;
+      }, {});
+    }
+
+    if (typeof response === "object") return response;
+
+    return {};
+  }
+
   const fetchCustomers = async () => {
     try {
-      const customers = await getCustomersDetail() || [];
+      const rawCustomers = await getCustomersDetail();
+      const customers = normalizeCustomers(rawCustomers);
       console.log("Fetched customer Mode.tsx", customers);
       setCustomers(customers);
     } catch (error) {

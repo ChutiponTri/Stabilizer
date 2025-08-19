@@ -10,7 +10,7 @@ function RightBar() {
   React.useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const customers = await getCustomers();
+        const customers = await getCustomers(false);
         console.log("Fetched customers right bar:", customers);
         setCustomers(customers); // Set the fetched customers in the state
       } catch (error) {

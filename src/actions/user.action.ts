@@ -57,12 +57,14 @@ export async function getUserByClerkId(clerkId: string) {
   }
 }
 
-export async function getCustomers() {
+export async function getCustomers(revalidate: boolean) {
   try {
     const { userId } = await auth();
     const user = await currentUser();
 
     if (!userId || !user) return [];
+
+    if (revalidate) revalidateTag(`customer-list-${userId}`)
 
     try {
       const response = await getDbFirebase(`customers/${userId}`, "shallow=true", "GET", null, {

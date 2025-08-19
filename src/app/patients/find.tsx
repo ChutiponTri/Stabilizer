@@ -18,7 +18,6 @@ import { DatePicker } from "@/components/date-picker"
 import { getCustomers } from "@/actions/user.action"
 import { Skeleton } from "@/components/ui/skeleton"
 import Create from "./create"
-import { redirect } from "next/navigation"
 
 export const formSchema = z.object({
   id: z.string().min(1),
@@ -48,6 +47,7 @@ function Find() {
   const [refresh, setRefresh] = React.useState<boolean>(false);
   const [fetching, setFetching] = React.useState<boolean>(true);
   const [patientList, setPatientList] = React.useState<string[]>([]);
+  const [revalidate, setRevalidate] = React.useState<boolean>(false);
 
   const genders = [{ label: "Male", value: "male" },
   { label: "Female", value: "female" },
@@ -68,16 +68,17 @@ function Find() {
     const fetchCustomers = async () => {
       try {
         setFetching(true);
-        const customers = await getCustomers();
+        const customers = await getCustomers(revalidate);
         setPatientList(customers); // Set the fetched customers in the state
       } catch (error) {
         console.error("Failed to fetch customers", error);
       } finally {
         setFetching(false);
+        setRevalidate(false);
       }
     };
     fetchCustomers(); // Actually call the fetch function
-  }, [refresh]);
+  }, [refresh, revalidate]);
 
   const weight = useWatch({ control: form.control, name: "weight" });
   const height = useWatch({ control: form.control, name: "height" });
@@ -168,7 +169,7 @@ function Find() {
         }
       };
       fetchData();
-      setRefresh(true);
+      setRevalidate(true);
       toast.success("Patient Data Update Successfully");
     } catch (error) {
       console.error("Form submission error", error);

@@ -154,7 +154,7 @@ function Query() {
   React.useEffect(() => {
     const fetchPatients = async () => {
       try {
-        const patients = await getCustomers();
+        const patients = await getCustomers(false);
         if (Array.isArray(patients) && patients.length > 0) {
           setPatient(patients);
         }

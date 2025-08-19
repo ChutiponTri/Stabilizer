@@ -17,7 +17,7 @@ async function Sidebar() {
   if (!user) return null;
 
   const device = await getDevice() || undefined;
-  const customers = await getCustomers();
+  const customers = await getCustomers(false);
 
   return (
     <div className="sticky top-20">
