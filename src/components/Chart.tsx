@@ -17,14 +17,14 @@ import { Input } from "./ui/input"
 
 const maxPressure = 100;
 const initialMode = [
-  { label: "cervical", min: 20, max: 30, fill: "var(--color-cervical)" },
-  { label: "thoracic", min: 30, max: 40, fill: "var(--color-thoracic)" },
-  { label: "lumbar extension", min: 30, max: 40, fill: "var(--color-lumbar)" },
-  { label: "lumbar", min: 40, max: 50, fill: "var(--color-lumbar)" },
-  { label: "custom", min: 20, max: 50, fill: "var(--color-custom)" },
-]
+  { label: "cervical", min: 20 - 2, max: 30 + 2, fill: "var(--color-cervical)" },
+  { label: "thoracic", min: 30 - 2, max: 40 + 2, fill: "var(--color-thoracic)" },
+  { label: "lumbar extension", min: 30 - 2, max: 40 + 2, fill: "var(--color-lumbar)" },
+  { label: "lumbar", min: 40 - 2, max: 50 + 2, fill: "var(--color-lumbar)" },
+  { label: "custom", min: 20 - 2, max: 50 + 2, fill: "var(--color-custom)" },
+];
 
-type Modes = { label: string, min: number, max: number, fill: string }
+type Modes = { label: string, min: number, max: number, fill: string };
 
 export type PressureData = {
   pressure: number;
@@ -38,7 +38,7 @@ type TimeData = {
   label: string;
   current: number;
   fill: string;
-}
+};
 
 type Repetition = {
   remaining: number,
@@ -55,14 +55,14 @@ interface PageProps {
     mode: string;
     id: string;
   }
-}
+};
 
 function Chart({ params }: PageProps) {
   const router = useRouter();
   const activeLabel = params.mode;
   const patientId = params.id;
 
-  const [timer, setInitTimer] = React.useState<number>(10);
+  const [timer, setInitTimer] = React.useState<number>(5);      // Init Timer
   const [isClient, setIsClient] = React.useState(false);
   const [pressure, setPressure] = React.useState<{ pressure: number; timestamp?: string }>({ pressure: 25 });
   const [pressureData, setData] = React.useState<{ pressure: number; timestamp: string }[]>([]);
@@ -82,6 +82,15 @@ function Chart({ params }: PageProps) {
   const flagRef = React.useRef(flag);
   const startTimeRef = React.useRef(startTime);
   const startedRef = React.useRef(started);
+
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+
+  const playSound = (file: string) => {
+    if (audioRef.current) {
+      audioRef.current.src = file;
+      audioRef.current.play();
+    }
+  }
 
   React.useEffect(() => {
     flagRef.current = flag;                     // Update ref when flag changes
@@ -147,7 +156,7 @@ function Chart({ params }: PageProps) {
   const data = [
     { name: "Pressure", value: safePressure, fill: gaugeColor },
     { name: "Remaining", value: maxPressure - safePressure, fill: "#ddd" },
-  ]
+  ];
 
   React.useEffect(() => {
     const dataCallback = async (data: { pressure?: number; device?: string }) => {
@@ -156,10 +165,11 @@ function Chart({ params }: PageProps) {
         let newData: PressureData = { pressure: data.pressure, timestamp: newTimestamp };
         // setData((prevData) => [...prevData, newData]);
         setData((prevData) => {
-          const updatedData = [...prevData, newData];
+          if (prevData.length > 0 && prevData[prevData.length - 1].pressure === newData.pressure) {
+            return prevData; // skip duplicate
+          }
 
-          // Ensure the total length does not exceed 200 by dropping the oldest entries
-          return updatedData.length > 5 ? updatedData.slice(updatedData.length - 10) : updatedData;
+          return [...prevData, newData];
         });
         setPressure(newData);
         newData.start = startTimeRef.current;
@@ -228,13 +238,15 @@ function Chart({ params }: PageProps) {
     console.log(`Selected Device: ${selectedDevice}`);
   };
 
+  // Init Reps
   const initialReps: Repetition = {
-    remaining: 5,
-    total: 5,
+    remaining: 3,
+    total: 3,
   };
 
+  // Init Sleep
   const initialSleep: SleepDuration = {
-    duration: 5,
+    duration: 3,
     flag: false,
   };
 
@@ -645,6 +657,12 @@ function Chart({ params }: PageProps) {
 
       <Timer timer={timer} onSubmit={handleTime} isEditing={isEditing} setTimeValue={setTimeValue} setInitTimer={setInitTimer} sleep={sleep.duration} setSleep={setSleep} reps={reps.total} setReps={setReps} setIsEditing={setIsEditing} />
 
+      <div>
+        <audio ref={audioRef} preload="auto" />
+        <button onClick={() => playSound("/sounds/cizem.mp3")}>Play Alert</button>
+        <button onClick={() => playSound("/sounds/oplata.mp3")}>Play Notify</button>
+        <button onClick={() => playSound("/sounds/warning.mp3")}>Play Warning</button>
+      </div>
     </div>
   );
 }
