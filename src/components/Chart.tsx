@@ -85,13 +85,21 @@ function Chart({ params }: PageProps) {
 
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
-  const playSound = (file: string) => {
-    if (audioRef.current) {
-      audioRef.current.src = file;
-      audioRef.current.play();
-    }
-  }
+  const playSound = (src: string, { skipIfPlaying = false } = {}) => {
+    if (!audioRef.current) audioRef.current = new Audio();
 
+    const audio = audioRef.current;
+
+    // If already playing and skip is enabled → do nothing
+    if (skipIfPlaying && !audio.paused) {
+      return;
+    }
+
+    // Otherwise play new sound
+    audio.src = src;
+    audio.currentTime = 0;
+    audio.play().catch(err => console.log(err));
+  };
   React.useEffect(() => {
     flagRef.current = flag;                     // Update ref when flag changes
   }, [flag]);
@@ -165,6 +173,9 @@ function Chart({ params }: PageProps) {
         let newData: PressureData = { pressure: data.pressure, timestamp: newTimestamp };
         // setData((prevData) => [...prevData, newData]);
         setData((prevData) => {
+          if (activeMode && newData.pressure > activeMode.max) playSound("/sounds/warning.m4a", { skipIfPlaying: true });
+          console.log("MAX =", activeMode?.max);
+
           if (prevData.length > 0 && prevData[prevData.length - 1].pressure === newData.pressure) {
             return prevData; // skip duplicate
           }
@@ -190,6 +201,7 @@ function Chart({ params }: PageProps) {
 
     const startCallback = async (flag: boolean) => {
       setStarted(flag);
+      playSound("/sounds/oplata.m4a")
       console.log("Set started");
     }
 
@@ -381,6 +393,7 @@ function Chart({ params }: PageProps) {
       const current = Date.now();
       setEndTime(current);
       setStarted(false);
+      playSound("/sounds/cizem.m4a")
     }
   }, [flag, started]);
 
@@ -389,6 +402,14 @@ function Chart({ params }: PageProps) {
 
   return (
     <div>
+
+      <div>
+        <audio ref={audioRef} preload="auto" />
+        {/* <button onClick={() => playSound("/sounds/oplata.m4a")}>Start</button>
+        <button onClick={() => playSound("/sounds/cizem.m4a")}>Finish</button>
+        <button onClick={() => playSound("/sounds/warning.m4a")}>Warning</button> */}
+      </div>
+
       <Card className="flex flex-col">
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -657,12 +678,6 @@ function Chart({ params }: PageProps) {
 
       <Timer timer={timer} onSubmit={handleTime} isEditing={isEditing} setTimeValue={setTimeValue} setInitTimer={setInitTimer} sleep={sleep.duration} setSleep={setSleep} reps={reps.total} setReps={setReps} setIsEditing={setIsEditing} />
 
-      <div>
-        <audio ref={audioRef} preload="auto" />
-        <button onClick={() => playSound("/sounds/cizem.mp3")}>Play Alert</button>
-        <button onClick={() => playSound("/sounds/oplata.mp3")}>Play Notify</button>
-        <button onClick={() => playSound("/sounds/warning.mp3")}>Play Warning</button>
-      </div>
     </div>
   );
 }
