@@ -21,7 +21,7 @@ const initialMode = [
   { label: "thoracic", min: 30 - 2, max: 40 + 2, fill: "var(--color-thoracic)" },
   { label: "lumbar extension", min: 30 - 2, max: 40 + 2, fill: "var(--color-lumbar)" },
   { label: "lumbar", min: 40 - 2, max: 50 + 2, fill: "var(--color-lumbar)" },
-  { label: "custom", min: 20 - 2, max: 50 + 2, fill: "var(--color-custom)" },
+  { label: "custom", min: 40 - 2, max: 50 + 2, fill: "var(--color-custom)" },
 ];
 
 type Modes = { label: string, min: number, max: number, fill: string };
