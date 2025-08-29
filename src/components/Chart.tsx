@@ -457,6 +457,7 @@ function Chart({ params }: PageProps) {
                     setData([]);
                     setFlag(true);
                     setStarted(false);
+                    setIsFinish(false);
                     const curTime = new Date().toLocaleString();
                     setTime(curTime);
                     publish();
