@@ -96,6 +96,28 @@ function Chart({ params }: PageProps) {
     });
   };
 
+  const [soundInited, setSoundInited] = React.useState(false);
+
+  const initSounds = async () => {
+    if (soundInited) return; // ป้องกัน init ซ้ำ
+
+    preloadSounds(["/sounds/warning.m4a", "/sounds/cizem.m4a", "/sounds/oplata.m4a"]);
+
+    for (const audio of Object.values(audioCache)) {
+      try {
+        audio.muted = true;
+        await audio.play();
+        audio.pause();
+        audio.muted = false;
+        audio.currentTime = 0;
+      } catch (err) {
+        console.warn("Init failed", err);
+      }
+    }
+
+    setSoundInited(true);
+  };
+
   React.useEffect(() => {
     preloadSounds(["/sounds/warning.m4a", "/sounds/cizem.m4a", "/sounds/oplata.m4a"]);
   }, []);
@@ -477,6 +499,7 @@ function Chart({ params }: PageProps) {
                     setShowEditDialog(true);
                     pair();
                   } else {
+                    initSounds();
                     setData([]);
                     setReps(prevReps => ({
                       ...prevReps,
