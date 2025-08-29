@@ -84,7 +84,7 @@ function Chart({ params }: PageProps) {
   const startTimeRef = React.useRef(startTime);
   const startedRef = React.useRef(started);
 
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  // const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   const preloadSounds = (sounds: string[]) => {
     sounds.forEach(src => {
@@ -99,22 +99,6 @@ function Chart({ params }: PageProps) {
   React.useEffect(() => {
     preloadSounds(["/sounds/warning.m4a", "/sounds/cizem.m4a", "/sounds/oplata.m4a"]);
   }, []);
-
-  const playSounds = (src: string, { skipIfPlaying = false } = {}) => {
-    if (!audioRef.current) audioRef.current = new Audio();
-
-    const audio = audioRef.current;
-
-    // If already playing and skip is enabled → do nothing
-    if (skipIfPlaying && !audio.paused) {
-      return;
-    }
-
-    // Otherwise play new sound
-    audio.src = src;
-    audio.currentTime = 0;
-    audio.play().catch(err => console.log(err));
-  };
 
   const playSound = (src: string, { skipIfPlaying = false } = {}) => {
     let audio = audioCache[src];
@@ -239,7 +223,7 @@ function Chart({ params }: PageProps) {
     const startCallback = async (flag: boolean) => {
       if (flagRef.current && !sleepRef.current.flag && !startedRef.current) {
         setStarted(flag);
-        playSound("/sounds/oplata.m4a")
+        playSound("/sounds/oplata.m4a");
         console.log("Set started");
       }
     }
@@ -443,7 +427,7 @@ function Chart({ params }: PageProps) {
     <div>
 
       <div>
-        <audio ref={audioRef} preload="auto" />
+        {/* <audio ref={audioRef} preload="auto" /> */}
         {/* <button onClick={() => playSound("/sounds/oplata.m4a")}>Start</button>
         <button onClick={() => playSound("/sounds/cizem.m4a")}>Finish</button>
         <button onClick={() => playSound("/sounds/warning.m4a")}>Warning</button> */}
