@@ -97,7 +97,7 @@ function Chart({ params }: PageProps) {
   };
 
   React.useEffect(() => {
-    preloadSounds(["/sounds/warning.m4a", "/sounds/cizem.m4a", "/sounds/oplata.m4a"])
+    preloadSounds(["/sounds/warning.m4a", "/sounds/cizem.m4a", "/sounds/oplata.m4a"]);
   }, []);
 
   const playSounds = (src: string, { skipIfPlaying = false } = {}) => {
