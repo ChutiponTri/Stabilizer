@@ -169,11 +169,12 @@ function Chart({ params }: PageProps) {
   React.useEffect(() => {
     const dataCallback = async (data: { pressure?: number; device?: string }) => {
       if ("pressure" in data && typeof data.pressure === "number" && flagRef.current && !sleepRef.current.flag && startedRef.current) {
+        if (activeMode && data.pressure > activeMode.max) playSound("/sounds/warning.m4a", { skipIfPlaying: true });
         const newTimestamp = new Date().toLocaleString();
         let newData: PressureData = { pressure: data.pressure, timestamp: newTimestamp };
         // setData((prevData) => [...prevData, newData]);
+
         setData((prevData) => {
-          if (activeMode && newData.pressure > activeMode.max) playSound("/sounds/warning.m4a", { skipIfPlaying: true });
           console.log("MAX =", activeMode?.max);
 
           if (prevData.length > 0 && prevData[prevData.length - 1].pressure === newData.pressure) {
@@ -200,9 +201,11 @@ function Chart({ params }: PageProps) {
     };
 
     const startCallback = async (flag: boolean) => {
-      setStarted(flag);
-      playSound("/sounds/oplata.m4a")
-      console.log("Set started");
+      if (!flag && !started && isFinish) {
+        setStarted(flag);
+        playSound("/sounds/oplata.m4a")
+        console.log("Set started");
+      }
     }
 
     const mqttClient = new MQTT(dataCallback, startCallback);
