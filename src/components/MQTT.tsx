@@ -109,10 +109,11 @@ class MQTT {
         this.callback(payload);
       } else if (topic === this.start_topic && payload.start === 1) {
         console.log("Start flag from Device:", payload);
-        this.startCallback(payload.start);
+        this.startCallback(true);
       }  else if (topic === this.start_topic) {
         console.log("Start Flag Trouble Test:", payload);
         console.log(payload.start, typeof payload.start);
+        this.startCallback(true);
       } 
     } catch (error) {
       console.error("Failed to parse MQTT message:", error);
