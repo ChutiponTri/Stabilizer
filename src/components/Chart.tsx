@@ -77,6 +77,7 @@ function Chart({ params }: PageProps) {
   const [isCustom, setIsCustom] = React.useState<boolean>(false);
   const [modes, setModes] = React.useState(initialMode);
   const [started, setStarted] = React.useState(false);
+  const audioCache: Record<string, HTMLAudioElement> = {};
 
   const mqttRef = React.useRef<MQTT | null>(null);
   const flagRef = React.useRef(flag);
@@ -85,7 +86,21 @@ function Chart({ params }: PageProps) {
 
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
-  const playSound = (src: string, { skipIfPlaying = false } = {}) => {
+  const preloadSounds = (sounds: string[]) => {
+    sounds.forEach(src => {
+      if (!audioCache[src]) {
+        const audio = new Audio(src);
+        audio.preload = "auto";
+        audioCache[src] = audio;
+      }
+    });
+  };
+
+  React.useEffect(() => {
+    preloadSounds(["/sounds/warning.m4a", "/sounds/cizem.m4a", "/sounds/oplata.m4a"])
+  }, []);
+
+  const playSounds = (src: string, { skipIfPlaying = false } = {}) => {
     if (!audioRef.current) audioRef.current = new Audio();
 
     const audio = audioRef.current;
@@ -100,6 +115,27 @@ function Chart({ params }: PageProps) {
     audio.currentTime = 0;
     audio.play().catch(err => console.log(err));
   };
+
+  const playSound = (src: string, { skipIfPlaying = false } = {}) => {
+    let audio = audioCache[src];
+
+    if (!audio) {
+      // ถ้าไม่ preload ไว้ → โหลดใหม่ แต่ Safari จะ block ถ้าไม่เคยมี user action
+      audio = new Audio(src);
+      audio.preload = "auto";
+      audioCache[src] = audio;
+    }
+
+    if (skipIfPlaying && !audio.paused) {
+      return;
+    }
+
+    audio.currentTime = 0;
+    audio.play().catch(err => {
+      console.warn("Safari block play:", err);
+    });
+  };
+
   React.useEffect(() => {
     flagRef.current = flag;                     // Update ref when flag changes
   }, [flag]);
