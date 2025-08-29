@@ -237,7 +237,7 @@ function Chart({ params }: PageProps) {
     };
 
     const startCallback = async (flag: boolean) => {
-      if (!flag && !started && isFinish) {
+      if (flagRef.current && !sleepRef.current.flag && !startedRef.current) {
         setStarted(flag);
         playSound("/sounds/oplata.m4a")
         console.log("Set started");
@@ -432,7 +432,7 @@ function Chart({ params }: PageProps) {
       const current = Date.now();
       setEndTime(current);
       setStarted(false);
-      playSound("/sounds/cizem.m4a")
+      playSound("/sounds/cizem.m4a");
     }
   }, [flag, started]);
 
