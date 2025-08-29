@@ -228,7 +228,7 @@ function Chart({ params }: PageProps) {
     if (!isClient || !activeLabel || !mqttRef.current) return;
     const modePressure = modes.find(mode => activeLabel.toLowerCase().includes(mode.label))?.min || 0;
     if (modePressure == 0) return;
-    mqttRef.current.publish(modePressure, activeLabel);
+    mqttRef.current.publish(modePressure + 2, activeLabel);
     console.log("Start: MQTT published →", modePressure, "mode →", activeLabel);
   }
 
