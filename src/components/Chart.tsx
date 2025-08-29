@@ -294,10 +294,10 @@ function Chart({ params }: PageProps) {
     ];
     setPercent(newTime);
 
-    setReps(prevReps => ({
-      ...prevReps,
-      remaining: prevReps.total,
-    }));
+    // setReps(prevReps => ({
+    //   ...prevReps,
+    //   remaining: prevReps.total,
+    // }));
 
     setSleep(prevSleep => {
       const updated = { ...prevSleep, flag: false };
@@ -455,6 +455,10 @@ function Chart({ params }: PageProps) {
                     pair();
                   } else {
                     setData([]);
+                    setReps(prevReps => ({
+                      ...prevReps,
+                      remaining: prevReps.total,
+                    }));
                     setFlag(true);
                     setStarted(false);
                     setIsFinish(false);
