@@ -12,11 +12,15 @@ class MQTT {
   start_topic: string = "";
   pair_topic: string;
   dev_topic: string;
-  dev_name:  string = "";
+  dev_name: string = "";
   isInitialized: boolean = false;
+  broker: string = "";
+  port: number = 0;
+  username: string = "";
+  password: string = "";
 
   constructor(
-    dataCallback: (data: any) => void, 
+    dataCallback: (data: any) => void,
     startCallback: (flag: boolean) => void
   ) {
     this.data_topic = process.env.NEXT_PUBLIC_DATA_TOPIC || "undefined";
@@ -24,8 +28,19 @@ class MQTT {
     this.pair_topic = process.env.NEXT_PUBLIC_PAIR_TOPIC || "undefined";
     this.dev_topic = process.env.NEXT_PUBLIC_DEV_TOPIC || "undefined";
     this.start_topic = process.env.NEXT_PUBLIC_START_TOPIC || "undefined";
-    if ( this.pair_topic === "undefined" || this.dev_topic === "undefined") throw new Error("MQTT Topic not found");
-    
+    this.broker = process.env.NEXT_PUBLIC_MQTT_BROKER || "undefined";
+    this.port = Number(process.env.NEXT_PUBLIC_MQTT_PORT) || 0;
+    this.username = process.env.NEXT_PUBLIC_MQTT_USERNAME || "undefined";
+    this.password = process.env.NEXT_PUBLIC_MQTT_PASS || "undefined";
+    if (
+      this.pair_topic === "undefined" ||
+      this.dev_topic === "undefined" ||
+      this.broker === "undefined" ||
+      this.port === 0 ||
+      this.username === "undefined" ||
+      this.password === "undefined"
+    ) throw new Error("MQTT Topic not found");
+
     this.callback = dataCallback;
     this.startCallback = startCallback;
     this.connectMQTT();
@@ -65,12 +80,14 @@ class MQTT {
     const clientId = "tchutipon-" + Math.floor(Math.random() * 0xffff).toString();
     const broker = "broker.emqx.io";
     const port = 8084;
-    const url = `wss://${broker}:${port}/mqtt`;
+    const url = `wss://${this.broker}:${port}/mqtt`;
 
     this.client = mqtt.connect(url, {
-      clientId,
+      clientId: clientId,
       clean: true,
-      connectTimeout: 4000
+      connectTimeout: 4000,
+      username: this.username,
+      password: this.password,
     });
 
     this.client.on("connect", () => {
@@ -110,11 +127,11 @@ class MQTT {
       } else if (topic === this.start_topic && payload.start === 1) {
         console.log("Start flag from Device:", payload);
         this.startCallback(true);
-      }  else if (topic === this.start_topic) {
+      } else if (topic === this.start_topic) {
         console.log("Start Flag Trouble Test:", payload);
         console.log(payload.start, typeof payload.start);
         this.startCallback(true);
-      } 
+      }
     } catch (error) {
       console.error("Failed to parse MQTT message:", error);
     }

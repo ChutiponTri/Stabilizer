@@ -195,8 +195,6 @@ function Chart({ params }: PageProps) {
         // setData((prevData) => [...prevData, newData]);
 
         setData((prevData) => {
-          console.log("MAX =", activeMode?.max);
-
           if (prevData.length > 0 && prevData[prevData.length - 1].pressure === newData.pressure) {
             return prevData; // skip duplicate
           }
