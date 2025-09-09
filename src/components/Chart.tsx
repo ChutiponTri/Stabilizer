@@ -62,7 +62,7 @@ function Chart({ params }: PageProps) {
   const activeLabel = params.mode;
   const patientId = params.id;
 
-  const [timer, setInitTimer] = React.useState<number>(5);      // Init Timer
+  const [timer, setInitTimer] = React.useState<number>(30);      // Init Timer
   const [isClient, setIsClient] = React.useState(false);
   const [pressure, setPressure] = React.useState<{ pressure: number; timestamp?: string }>({ pressure: 25 });
   const [pressureData, setData] = React.useState<{ pressure: number; timestamp: string }[]>([]);
@@ -344,7 +344,7 @@ function Chart({ params }: PageProps) {
 
   React.useEffect(() => {
     if (!flag) return;
-    if (flag && !started) return setWaiting();
+    // if (flag && !started) return setWaiting();                           // Comment out for skip hardware cmd
 
     initPercent();
     const now = Date.now();
@@ -353,6 +353,7 @@ function Chart({ params }: PageProps) {
     let targetEndTime = now + duration;
     setBeginTime(now);
     repsRef.current = reps.remaining;
+    playSound("/sounds/oplata.m4a");                                        // This line for initial start sound
 
     const interval = setInterval(() => {
       const current = Date.now();
@@ -383,6 +384,7 @@ function Chart({ params }: PageProps) {
             });
             targetEndTime = Date.now() + sleepDuration;
           } else {
+            playSound("/sounds/oplata.m4a");                                    // Add this line for each rep start sound
             setSleep(prevRest => {
               const updated = { ...prevRest, flag: false };
               sleepRef.current = updated;
@@ -481,11 +483,11 @@ function Chart({ params }: PageProps) {
                       remaining: prevReps.total,
                     }));
                     setFlag(true);
-                    setStarted(false);
+                    setStarted(true);                                 // Change from false to true
                     setIsFinish(false);
                     const curTime = new Date().toLocaleString();
                     setTime(curTime);
-                    publish();
+                    // publish();                                     // Comment out this line for skip start signal
                   }
                 }
               }}>Start</Button>
