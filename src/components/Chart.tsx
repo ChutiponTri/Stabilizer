@@ -24,6 +24,10 @@ const initialMode = [
   { label: "custom", min: 40 - 2, max: 50 + 2, fill: "var(--color-custom)" },
 ];
 
+const startTimerInit = 20;
+const restTimerInit = 10;
+const repsInit = 3;
+
 type Modes = { label: string, min: number, max: number, fill: string };
 
 export type PressureData = {
@@ -62,7 +66,7 @@ function Chart({ params }: PageProps) {
   const activeLabel = params.mode;
   const patientId = params.id;
 
-  const [timer, setInitTimer] = React.useState<number>(30);      // Init Timer
+  const [timer, setInitTimer] = React.useState<number>(startTimerInit);      // Init Timer
   const [isClient, setIsClient] = React.useState(false);
   const [pressure, setPressure] = React.useState<{ pressure: number; timestamp?: string }>({ pressure: 25 });
   const [pressureData, setData] = React.useState<{ pressure: number; timestamp: string }[]>([]);
@@ -97,7 +101,7 @@ function Chart({ params }: PageProps) {
   };
 
   React.useEffect(() => {
-    preloadSounds(["/sounds/warning.m4a", "/sounds/cizem.m4a", "/sounds/oplata.m4a"]);
+    preloadSounds(["/sounds/warning.m4a", "/sounds/cizem.m4a", "/sounds/oplata.m4a", "/sounds/cat.m4a"]);
   }, []);
 
   const playSound = (src: string, { skipIfPlaying = false } = {}) => {
@@ -273,13 +277,13 @@ function Chart({ params }: PageProps) {
 
   // Init Reps
   const initialReps: Repetition = {
-    remaining: 3,
-    total: 3,
+    remaining: repsInit,
+    total: repsInit,
   };
 
   // Init Sleep
   const initialSleep: SleepDuration = {
-    duration: 3,
+    duration: restTimerInit,
     flag: false,
   };
 
@@ -377,6 +381,7 @@ function Chart({ params }: PageProps) {
       if (seconds <= 0) {
         if (repsRef.current > 1) {
           if (!sleepRef.current.flag) {
+            playSound("/sounds/cat.m4a");                                    // Add this line for each rep start sound
             setSleep(prevRest => {
               const updated = { ...prevRest, flag: true };
               sleepRef.current = updated;
