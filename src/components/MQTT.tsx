@@ -86,6 +86,8 @@ class MQTT {
       clientId: clientId,
       clean: true,
       connectTimeout: 4000,
+      keepalive: 60,
+      reconnectPeriod: 5,
       username: this.username,
       password: this.password,
     });
