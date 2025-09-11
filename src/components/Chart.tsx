@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Label } from "./ui/label"
 import { Input } from "./ui/input"
+import { Select, SelectTrigger, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectValue } from "./ui/select"
 
 const maxPressure = 100;
 const initialMode = [
@@ -81,6 +82,7 @@ function Chart({ params }: PageProps) {
   const [isCustom, setIsCustom] = React.useState<boolean>(false);
   const [modes, setModes] = React.useState(initialMode);
   const [started, setStarted] = React.useState(false);
+  const [restSound, setRestSound] = React.useState<string>("/sounds/rest.m4a");
   const audioCache: Record<string, HTMLAudioElement> = {};
 
   const mqttRef = React.useRef<MQTT | null>(null);
@@ -101,7 +103,7 @@ function Chart({ params }: PageProps) {
   };
 
   React.useEffect(() => {
-    preloadSounds(["/sounds/warning.m4a", "/sounds/cizem.m4a", "/sounds/oplata.m4a", "/sounds/cat.m4a"]);
+    preloadSounds(["/sounds/warning.m4a", "/sounds/cizem.m4a", "/sounds/oplata.m4a", "/sounds/rest.m4a", "/sounds/cat.m4a"]);
   }, []);
 
   const playSound = (src: string, { skipIfPlaying = false } = {}) => {
@@ -381,7 +383,7 @@ function Chart({ params }: PageProps) {
       if (seconds <= 0) {
         if (repsRef.current > 1) {
           if (!sleepRef.current.flag) {
-            playSound("/sounds/cat.m4a");                                    // Add this line for each rep start sound
+            playSound(restSound);                                    // Add this line for each rep start sound
             setSleep(prevRest => {
               const updated = { ...prevRest, flag: true };
               sleepRef.current = updated;
@@ -709,7 +711,7 @@ function Chart({ params }: PageProps) {
 
       <Custom modes={modes} isCustom={isCustom} setModes={setModes} setIsCustom={setIsCustom} />
 
-      <Timer timer={timer} onSubmit={handleTime} isEditing={isEditing} setTimeValue={setTimeValue} setInitTimer={setInitTimer} sleep={sleep.duration} setSleep={setSleep} reps={reps.total} setReps={setReps} setIsEditing={setIsEditing} />
+      <Timer timer={timer} onSubmit={handleTime} isEditing={isEditing} setTimeValue={setTimeValue} setInitTimer={setInitTimer} sleep={sleep.duration} setSleep={setSleep} reps={reps.total} setReps={setReps} setIsEditing={setIsEditing} restSound={restSound} setRestSound={setRestSound} />
 
     </div>
   );
@@ -815,7 +817,7 @@ function Custom({ modes, isCustom, setModes, setIsCustom }: {
   )
 }
 
-function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, sleep, setSleep, reps, setReps, setIsEditing }: {
+function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, sleep, setSleep, reps, setReps, setIsEditing, restSound, setRestSound }: {
   timer: number
   onSubmit?: (newTime: number) => void,
   isEditing: boolean,
@@ -826,10 +828,13 @@ function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, sleep, 
   reps: number,
   setReps: React.Dispatch<React.SetStateAction<Repetition>>,
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>,
+  restSound: string,
+  setRestSound: React.Dispatch<React.SetStateAction<string>>
 }) {
   const timeInput = React.useRef<HTMLInputElement>(null);
   const repsInput = React.useRef<HTMLInputElement>(null);
   const sleepInput = React.useRef<HTMLInputElement>(null);
+  const [soundInput, setSoundInput] = React.useState<string>(restSound);
   return (
     <Dialog open={isEditing} onOpenChange={setIsEditing}>
       <DialogContent className="sm:max-w-[500px]">
@@ -875,6 +880,23 @@ function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, sleep, 
               className="h-10"
             />
           </div>
+
+          <div className="grid grid-cols-2 items-center gap-4">
+            <div className="justify-self-end text-right pt-1">Set Resting Sound:</div>
+            <Select value={soundInput} onValueChange={setSoundInput}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a sound" />
+              </SelectTrigger>
+              <SelectContent  position="popper" side="top" align="start" > 
+                <SelectGroup>
+                  <SelectLabel>Select a Sound</SelectLabel>
+                  <SelectItem value="/sounds/rest.m4a">Rest Sound</SelectItem>
+                  <SelectItem value="/sounds/cat.m4a">Cat Sound</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            
+          </div>
         </div>
 
         <div className="flex justify-end gap-3">
@@ -892,6 +914,7 @@ function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, sleep, 
               setTimeValue(newTime);
               setSleep((prev) => ({ ...prev, duration: newRest }));
               setReps((prev) => ({ remaining: newReps, total: newReps }));
+              setRestSound(soundInput);
               if (onSubmit) onSubmit(newTime);
               toast.success("Updated Timer Duration");
             }
