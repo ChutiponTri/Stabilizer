@@ -8,13 +8,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
-import { getDataChoice, getDataRaw } from "@/actions/data.action"
+import { deleteData, getDataChoice, getDataRaw } from "@/actions/data.action"
 import { getCustomers } from "@/actions/user.action"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import Excel from "./Excel"
 import toast from "react-hot-toast"
 import ChartRecall from "./ChartRecall"
 import ButtonLoading from "./ButtonLoading"
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "./ui/dialog"
 
 const data: Pressure[] = [];
 
@@ -107,6 +108,7 @@ function Query() {
   const [rowSelection, setRowSelection] = React.useState({});
   const [activeMode, setActiveMode] = React.useState("Table");
   const [dataLoading, setDataLoading] = React.useState(false);
+  const [openDialog, setOpenDialog] = React.useState(false);
 
   const table = useReactTable({
     data: rawData,
@@ -141,12 +143,13 @@ function Query() {
     const getIndex = async () => {
       const dataChoice = await getDataChoice(activePatientRef.current);
       console.log(dataChoice);
-      if (Array.isArray(dataChoice) && dataChoice.length > 0) {
-        setDataList(dataChoice);
-      } else {
+      if (!Array.isArray(dataChoice) || dataChoice.length === 0) {
         setDataList([]);
         setRawData([]);
+        return;
       }
+
+      setDataList(dataChoice);
     }
     getIndex();
   }, [activePatient, activeDataList]);
@@ -218,7 +221,11 @@ function Query() {
               <SelectValue placeholder="Select Data" />
             </SelectTrigger>
             <SelectContent align="end" className="rounded-xl w-full max-w-[140px] sm:right-auto">
-              {dataList.sort().map((data) => (
+              {dataList.sort((a, b) => {
+                const dateA = a.split("_")[1];
+                const dateB = b.split("_")[1];
+                return new Date(dateB.replace(",", "")).getTime() - new Date(dateA.replace(",", "")).getTime();
+              }).map((data) => (
                 <SelectItem key={data} value={data} className="rounded-lg">
                   {data}
                 </SelectItem>
@@ -307,8 +314,8 @@ function Query() {
         </div>
       ) : (dataLoading ?
         (<div className="text-center">
-          <ButtonLoading text={"Loading Data ..."} /> 
-        </div>):
+          <ButtonLoading text={"Loading Data ..."} />
+        </div>) :
         (<ChartRecall data={rawData} />))
       }
       <div className="flex items-center justify-end space-x-2 py-4">
@@ -340,9 +347,58 @@ function Query() {
               toast.error("Please Identify Data");
             }
           }}>Download Excel</Button>
+          <Button variant={"destructive"} onClick={() => setOpenDialog(true)}>Delete</Button>
+
+          <ConfirmDelete patient={activePatient} data={activeDataList} setActiveDataList={setActiveDataList} openDialog={openDialog} setOpenDialog={setOpenDialog} />
         </div>
       </div>
     </div>
+  )
+}
+
+function ConfirmDelete({ patient, data, setActiveDataList, openDialog, setOpenDialog }: {
+  patient: string | undefined,
+  data: string | undefined,
+  setActiveDataList: React.Dispatch<React.SetStateAction<string | undefined>>,
+  openDialog: boolean,
+  setOpenDialog: React.Dispatch<React.SetStateAction<boolean>>
+}) {
+
+  return (
+    <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+      <DialogContent>
+        <DialogTitle>{patient && data ? (
+          <>
+            Are you sure to delete {patient}:<br />
+            {data}
+          </>
+        ) : (
+          "No data selected"
+        )}</DialogTitle>
+        <div className="flex justify-end gap-3">
+          <DialogClose asChild>
+            <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancel</Button>
+          </DialogClose>
+          <Button onClick={() => {
+            setOpenDialog(false);
+            const del = async () => {
+              try {
+                if (!patient || !data) return;
+                const resp = await deleteData(patient, data);
+                if (resp.ok) {
+                  toast.success(`Deleted Data ${patient}: ${data}`);
+                  setActiveDataList(undefined);
+                }
+              } catch (error) {
+                console.log(error)
+              }
+            }
+
+            del();
+          }}>Confirm</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 

@@ -14,11 +14,11 @@ export async function storeData(data: PressureData) {
     const mode = data.mode;
     const start = data.start?.replace(/\//g, "-");
     console.log(id, start);
-    if (!id) return {status: "not ok", message: "Missing Patient ID"};
-    if (!start) return {status: "not ok", message: "Missing Patient Start Time"};
-    if (!mode) return {status: "not ok", message: "Missing Operation Mode"};
+    if (!id) return { status: "not ok", message: "Missing Patient ID" };
+    if (!start) return { status: "not ok", message: "Missing Patient Start Time" };
+    if (!mode) return { status: "not ok", message: "Missing Operation Mode" };
     if (!userId || !user) return { status: 404, message: "User not found" };
-    
+
     try {
       const response = await getDbFirebase(`users/${userId}`, "shallow=true");
       const keys = response && typeof response === "object" ? Object.keys(response) : [];
@@ -31,14 +31,14 @@ export async function storeData(data: PressureData) {
         };
         const post = await getDbFirebase(`data/${userId}/${id.toLowerCase()}/${mode}_${start}`, "", "POST", datatoSave);
         console.log("Posted");
-        return {status: "ok", message: "Insert Data Success"};
-    } else {
-      console.log("Physiotherapist not exists");
-      return {status: "not ok", message: "Cannot Insert Data"};
-    }
+        return { status: "ok", message: "Insert Data Success" };
+      } else {
+        console.log("Physiotherapist not exists");
+        return { status: "not ok", message: "Cannot Insert Data" };
+      }
     } catch (error) {
       console.error('Error checking if user exists:', error);
-      return {status: "not ok", message: error};
+      return { status: "not ok", message: error };
     }
 
   } catch (error) {
@@ -54,11 +54,11 @@ export async function getDataChoice(patientId: string | undefined) {
 
     if (!userId || !user) return { status: 404, message: "User not found" };
     if (!id) return { status: 404, message: "Patient ID not found" };
-        
+
     try {
       const response = await getDbFirebase(`customers/${userId}/${id}`, "shallow=true");
       const keys = response && typeof response === "object" ? Object.keys(response) : [];
-    
+
       // Check if data exists
       if (keys.length > 0) {
         const users = await getDbFirebase(`data/${userId}/${id.toLowerCase()}`, "shallow=true");
@@ -86,11 +86,11 @@ export async function getDataRaw(input: Query) {
     const dataName = input.dataName;
 
     if (!userId || !user) return { status: 404, message: "User not found" };
-        
+
     try {
       const response = await getDbFirebase(`customers/${userId}/${id}`, "shallow=true");
       const keys = response && typeof response === "object" ? Object.keys(response) : [];
-    
+
       // Check if data exists
       if (keys.length > 0) {
         const data = await getDbFirebase(`data/${userId}/${id.toLowerCase()}/${dataName}`);
@@ -118,9 +118,9 @@ export async function saveDevice(device: string) {
     const { userId } = await auth();
     const user = await currentUser();
     const devName = device;
-    if (!devName) return {status: "not ok", message: "Missing Device Name"};
+    if (!devName) return { status: "not ok", message: "Missing Device Name" };
     if (!userId || !user) return { status: 404, message: "User not found" };
-    
+
     try {
       const response = await getDbFirebase(`users/${userId}`, "shallow=true");
       const keys = response && typeof response === "object" ? Object.keys(response) : [];
@@ -133,14 +133,14 @@ export async function saveDevice(device: string) {
         const post = await getDbFirebase(`users/${userId}`, "", "PATCH", datatoSave);
         revalidateTag(`device-${userId}`);
         console.log("Posted");
-        return {status: "ok", message: "Insert Device Success"};
+        return { status: "ok", message: "Insert Device Success" };
       } else {
         console.log("Physiotherapist not exists");
-        return {status: "not ok", message: "Cannot Insert Device"};
+        return { status: "not ok", message: "Cannot Insert Device" };
       }
     } catch (error) {
       console.error('Error checking if user exists:', error);
-      return {status: "not ok", message: error};
+      return { status: "not ok", message: error };
     }
 
   } catch (error) {
@@ -153,7 +153,7 @@ export async function getDevice() {
     const { userId } = await auth();
     const user = await currentUser();
     if (!userId || !user) return { status: 404, message: "User not found" };
-    
+
     try {
       const response = await getDbFirebase(`users/${userId}/device`, "", "GET", null, {
         revalidate: false,
@@ -173,3 +173,22 @@ export async function getDevice() {
     console.log("Error in syncUser", error);
   }
 }
+
+export async function deleteData(patientId: string, data: string) {
+  try {
+    const { userId } = await auth();
+    const user = await currentUser();
+    if (!userId || !user) return { status: 404, message: "User not found", ok: false };
+
+    try {
+      const response = await getDbFirebase(`data/${userId}/${patientId}/${data}`, "", "DELETE");
+      return { ok: true };
+    } catch (error) {
+      console.error('Error checking if user exists:', error);
+      return { status: "not ok", message: error, ok: false };
+    }
+  } catch (error) {
+    console.log("Error in syncUser", error);
+    return { ok: false };
+  }
+} 
