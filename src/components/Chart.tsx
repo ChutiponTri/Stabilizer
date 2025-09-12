@@ -15,6 +15,7 @@ import Link from "next/link"
 import { Label } from "./ui/label"
 import { Input } from "./ui/input"
 import { Select, SelectTrigger, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectValue } from "./ui/select"
+import { getTimer, saveTimer } from "@/actions/chart.action"
 
 const maxPressure = 100;
 const initialMode = [
@@ -68,6 +69,8 @@ function Chart({ params }: PageProps) {
   const patientId = params.id;
 
   const [timer, setInitTimer] = React.useState<number>(startTimerInit);      // Init Timer
+  const [rest, setInitRest] = React.useState<number>(restTimerInit);
+  const [repetition, setInitReps] = React.useState<number>(repsInit);
   const [isClient, setIsClient] = React.useState(false);
   const [pressure, setPressure] = React.useState<{ pressure: number; timestamp?: string }>({ pressure: 25 });
   const [pressureData, setData] = React.useState<{ pressure: number; timestamp: string }[]>([]);
@@ -240,6 +243,28 @@ function Chart({ params }: PageProps) {
   }, []);
 
   React.useEffect(() => {
+    const fetchTimer = async () => {
+      try {
+        const resp = await getTimer();
+        setInitTimer(resp.timer);
+        setInitReps(resp.reps);
+        setInitRest(resp.rest);
+        setTimeValue(resp.timer);
+        setTimeLeft(prev => prev.map(item =>
+          item.label === "remaining"
+            ? { ...item, current: resp.timer }
+            : item
+        ));
+        setSleep((prev) => ({ ...prev, duration: resp.rest }));
+        setReps((prev) => ({ remaining: resp.reps, total: resp.reps }));
+      } catch (error) {
+        console.log("Error", error);
+      }
+    }
+    fetchTimer();
+  }, []);
+
+  React.useEffect(() => {
     if (!isClient || !activeLabel || !mqttRef.current) return;
     const initMQTT = async () => {
       if (!showEditDialog && mqttRef.current) {
@@ -249,7 +274,7 @@ function Chart({ params }: PageProps) {
 
     initMQTT();
     return () => { }
-  }, [showEditDialog])
+  }, [showEditDialog]);
 
   const publish = () => {
     if (!isClient || !activeLabel || !mqttRef.current) return;
@@ -279,13 +304,13 @@ function Chart({ params }: PageProps) {
 
   // Init Reps
   const initialReps: Repetition = {
-    remaining: repsInit,
-    total: repsInit,
+    remaining: repetition,
+    total: repetition,
   };
 
   // Init Sleep
   const initialSleep: SleepDuration = {
-    duration: restTimerInit,
+    duration: rest,
     flag: false,
   };
 
@@ -319,6 +344,7 @@ function Chart({ params }: PageProps) {
       { ...initialTime[0], current: timeValue },
       { ...initialTime[1] }
     ];
+    console.log(newTime)
     setPercent(newTime);
 
     // setReps(prevReps => ({
@@ -887,7 +913,7 @@ function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, sleep, 
               <SelectTrigger>
                 <SelectValue placeholder="Select a sound" />
               </SelectTrigger>
-              <SelectContent  position="popper" side="top" align="start" > 
+              <SelectContent position="popper" side="top" align="start" >
                 <SelectGroup>
                   <SelectLabel>Select a Sound</SelectLabel>
                   <SelectItem value="/sounds/rest.m4a">Rest Sound</SelectItem>
@@ -895,7 +921,7 @@ function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, sleep, 
                 </SelectGroup>
               </SelectContent>
             </Select>
-            
+
           </div>
         </div>
 
@@ -903,13 +929,14 @@ function Timer({ timer, onSubmit, isEditing, setTimeValue, setInitTimer, sleep, 
           <DialogClose asChild>
             <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
           </DialogClose>
-          <Button onClick={() => {
+          <Button onClick={async () => {
             setIsEditing(false);
             const newTime = timeInput.current?.valueAsNumber;
             const newReps = repsInput.current?.valueAsNumber;
             const newRest = sleepInput.current?.valueAsNumber;
             if (!newTime || !newReps || !newRest) toast.error("Please Fill the Time Duration");
             else {
+              const resp = await saveTimer(newReps, newTime, newRest);
               setInitTimer(newTime);
               setTimeValue(newTime);
               setSleep((prev) => ({ ...prev, duration: newRest }));
