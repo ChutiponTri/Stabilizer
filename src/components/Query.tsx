@@ -192,6 +192,14 @@ function Query() {
 
   console.log(rawData);
 
+  function downloadExcel() {
+    if (!activeDataList || !activePatient) return toast.error("Please select data");
+    const result = Excel(activePatient, activeDataList, rawData);
+    if (!result) {
+      toast.error("Please Identify Data");
+    }
+  }
+
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
@@ -340,13 +348,9 @@ function Query() {
           >
             Next
           </Button>
-          <Button onClick={() => {
-            if (!activeDataList || !activePatient) return;
-            const result = Excel(activePatient, activeDataList, rawData);
-            if (!result) {
-              toast.error("Please Identify Data");
-            }
-          }}>Download Excel</Button>
+          
+          <Button onClick={() => downloadExcel() }className="hidden md:inline">Download Excel</Button>
+          <Button onClick={ () => downloadExcel() } className="inline md:hidden">Download</Button>
           <Button variant={"destructive"} onClick={() => setOpenDialog(true)}>Delete</Button>
 
           <ConfirmDelete patient={activePatient} data={activeDataList} setActiveDataList={setActiveDataList} openDialog={openDialog} setOpenDialog={setOpenDialog} />
