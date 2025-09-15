@@ -4,17 +4,15 @@ import Chart from "@/components/Chart"
 import RightBar from "@/components/RightBar"
 import React from "react"
 
-type TimerProps = {
-  reps: number,
-  timer: number,
-  rest: number
-}
-
 export type PageProps = {
   mode: string;
   id: string;
   device: string | undefined
-  timer: TimerProps
+  timer: {
+    reps: number,
+    timer: number,
+    rest: number
+  }
 }
 
 function PressureClient({ mode, id, timer, device }: PageProps) {
