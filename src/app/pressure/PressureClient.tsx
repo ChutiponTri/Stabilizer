@@ -1,7 +1,7 @@
 "use client";
 
 import Chart from "@/components/Chart"
-import RightBar from "@/components/RightBar"
+import RightBar from "@/components/RightBar";
 import React from "react"
 
 export type PageProps = {
@@ -15,7 +15,7 @@ export type PageProps = {
   }
 }
 
-function PressureClient({ mode, id, timer, device }: PageProps) {
+function PressureClient({ mode, id, timer, device, customers }: PageProps & { customers: string[]; }) {
   const typedParams: PageProps = {
     mode: mode,
     id: id,
@@ -29,7 +29,7 @@ function PressureClient({ mode, id, timer, device }: PageProps) {
       </div>
 
       <div className="hidden lg:block lg:col-span-3 sticky top-20">
-        <RightBar />
+        <RightBar customers={customers} />
       </div>
     </div>
   )

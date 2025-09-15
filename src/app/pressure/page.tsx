@@ -4,6 +4,7 @@ import PressureClient from "./PressureClient"
 import { checkAvailableMode } from "@/lib/utils"
 import { getTimer } from "@/actions/chart.action";
 import { getDevice } from "@/actions/data.action";
+import { getCustomers } from "@/actions/user.action";
 
 async function page({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const mode = searchParams.mode;
@@ -12,6 +13,8 @@ async function page({ searchParams }: { searchParams: Record<string, string | un
   if (!mode || !id) redirect("/")
 
   const availableMode = checkAvailableMode(mode);
+
+  if (!availableMode) return redirect("/");
 
   const timer = await getTimer();
 
@@ -25,10 +28,11 @@ async function page({ searchParams }: { searchParams: Record<string, string | un
     dev = undefined;
   }
 
-  if (!availableMode) redirect("/");
+  const customers = await getCustomers(false);
+
 
   return (
-    <PressureClient mode={mode} id={id} timer={timer} device={dev} />
+    <PressureClient mode={mode} id={id} timer={timer} device={dev} customers={customers} />
   );
 }
 
