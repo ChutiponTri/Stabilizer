@@ -15,7 +15,8 @@ import Link from "next/link"
 import { Label } from "./ui/label"
 import { Input } from "./ui/input"
 import { Select, SelectTrigger, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectValue } from "./ui/select"
-import { getTimer, saveTimer } from "@/actions/chart.action"
+import { saveTimer } from "@/actions/chart.action"
+import { PageProps } from "@/app/pressure/PressureClient"
 
 const maxPressure = 100;
 const initialMode = [
@@ -25,10 +26,6 @@ const initialMode = [
   { label: "lumbar", min: 40 - 2, max: 50 + 2, fill: "var(--color-lumbar)" },
   { label: "custom", min: 40 - 2, max: 50 + 2, fill: "var(--color-custom)" },
 ];
-
-const startTimerInit = 20;
-const restTimerInit = 10;
-const repsInit = 3;
 
 type Modes = { label: string, min: number, max: number, fill: string };
 
@@ -56,17 +53,14 @@ type SleepDuration = {
   flag: boolean,
 };
 
-interface PageProps {
-  params: {
-    mode: string;
-    id: string;
-  }
-};
-
-function Chart({ params }: PageProps) {
+function Chart({ params }: { params: PageProps}) {
   const router = useRouter();
   const activeLabel = params.mode;
   const patientId = params.id;
+
+  const startTimerInit = params.timer.timer;
+  const restTimerInit = params.timer.rest;
+  const repsInit = params.timer.reps;
 
   const [timer, setInitTimer] = React.useState<number>(startTimerInit);      // Init Timer
   const [rest, setInitRest] = React.useState<number>(restTimerInit);
@@ -243,32 +237,10 @@ function Chart({ params }: PageProps) {
   }, []);
 
   React.useEffect(() => {
-    const fetchTimer = async () => {
-      try {
-        const resp = await getTimer();
-        setInitTimer(resp.timer);
-        setInitReps(resp.reps);
-        setInitRest(resp.rest);
-        setTimeValue(resp.timer);
-        setTimeLeft(prev => prev.map(item =>
-          item.label === "remaining"
-            ? { ...item, current: resp.timer }
-            : item
-        ));
-        setSleep((prev) => ({ ...prev, duration: resp.rest }));
-        setReps((prev) => ({ remaining: resp.reps, total: resp.reps }));
-      } catch (error) {
-        console.log("Error", error);
-      }
-    }
-    fetchTimer();
-  }, []);
-
-  React.useEffect(() => {
     if (!isClient || !activeLabel || !mqttRef.current) return;
     const initMQTT = async () => {
       if (!showEditDialog && mqttRef.current) {
-        await mqttRef.current.init(); // This initializes the MQTT connection and subscribes.
+        await mqttRef.current.init();           // This initializes the MQTT connection and subscribes.
       }
     };
 
@@ -344,7 +316,6 @@ function Chart({ params }: PageProps) {
       { ...initialTime[0], current: timeValue },
       { ...initialTime[1] }
     ];
-    console.log(newTime)
     setPercent(newTime);
 
     // setReps(prevReps => ({

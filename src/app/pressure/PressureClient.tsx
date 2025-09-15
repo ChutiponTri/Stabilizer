@@ -4,15 +4,23 @@ import Chart from "@/components/Chart"
 import RightBar from "@/components/RightBar"
 import React from "react"
 
-type PageProps = {
-  mode: string;
-  id: string;
+type TimerProps = {
+  reps: number,
+  timer: number,
+  rest: number
 }
 
-function PressureClient({ mode, id }: { mode: string, id: string }) {
+export type PageProps = {
+  mode: string;
+  id: string;
+  timer: TimerProps
+}
+
+function PressureClient({ mode, id, timer }: { mode: string, id: string, timer: TimerProps}) {
   const typedParams: PageProps = {
     mode: mode,
     id: id,
+    timer: timer
   };
   return (
     <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">

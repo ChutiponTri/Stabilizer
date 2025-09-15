@@ -56,7 +56,7 @@ export async function getTimer() {
       return obj;
     } catch (error) {
       console.error('Error checking if user exists:', error);
-      return { ...obj, status: "not ok", message: error };
+      return obj;
     }
   } catch (error) {
     console.log("Error in syncUser", error);
