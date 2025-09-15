@@ -137,7 +137,7 @@ export async function queryCustomers(id: string) {
         const users = await getDbFirebase(`customers/${userId}/${id.toLowerCase()}`);
         return users;
       } else {
-        console.log("No customers")
+        console.log("No customers");
         return;
       }
     } catch (error) {

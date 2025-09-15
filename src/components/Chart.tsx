@@ -53,10 +53,11 @@ type SleepDuration = {
   flag: boolean,
 };
 
-function Chart({ params }: { params: PageProps}) {
+function Chart({ params }: { params: PageProps }) {
   const router = useRouter();
   const activeLabel = params.mode;
   const patientId = params.id;
+  const device = params.device;
 
   const startTimerInit = params.timer.timer;
   const restTimerInit = params.timer.rest;
@@ -73,8 +74,7 @@ function Chart({ params }: { params: PageProps}) {
   const [showEditDialog, setShowEditDialog] = React.useState(false);
   const [devices, setDevices] = React.useState<string[]>([]);
   const [selectedDevice, setSelectedDevice] = React.useState<string | null>(null);
-  const [activeDevice, setActiveDevice] = React.useState<string | undefined>(undefined);
-  const [fetchingDevice, setFetchingDevice] = React.useState<boolean>(true);
+  const [activeDevice, setActiveDevice] = React.useState<string | undefined>(device);
   const [isFinish, setIsFinish] = React.useState<boolean>(false);
   const [isCustom, setIsCustom] = React.useState<boolean>(false);
   const [modes, setModes] = React.useState(initialMode);
@@ -135,6 +135,7 @@ function Chart({ params }: { params: PageProps}) {
     startedRef.current = started;
   }, [started]);
 
+  // Check if Patient is Exist in DB
   React.useEffect(() => {
     setIsClient(true);
     const fetchPatient = async () => {
@@ -152,24 +153,6 @@ function Chart({ params }: { params: PageProps}) {
     };
     fetchPatient();
   }, []);
-
-  React.useEffect(() => {
-    const fetchDevice = async () => {
-      try {
-        setFetchingDevice(true);
-        const device = await getDevice() || undefined;
-        console.log(device);
-        if (device && typeof device === "object" && "device" in device) {
-          setActiveDevice(device.device);
-        }
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setFetchingDevice(false);
-      }
-    }
-    fetchDevice();
-  }, [selectedDevice, showEditDialog]);
 
   const activeMode = modes.find((mode) => activeLabel.toLowerCase().includes(mode.label));
   const minAngle = activeMode ? 90 - activeMode.min * 3.6 : 90;
@@ -265,6 +248,7 @@ function Chart({ params }: { params: PageProps}) {
   const handleEditSubmit = async () => {
     if (!isClient || !activeLabel || !mqttRef.current || !selectedDevice) return;
     const response = await saveDevice(selectedDevice);
+    setActiveDevice(selectedDevice);
     if (response?.status == "ok") {
       toast.success("Device Saved Successfully");
     } else {
@@ -466,7 +450,7 @@ function Chart({ params }: { params: PageProps}) {
           </div>
           <div className="flex gap-3">
             <div className="flex gap-2">
-              <Button className="h-7 w-full sm:w-[120px]" disabled={fetchingDevice} onClick={() => {
+              <Button className="h-7 w-full sm:w-[120px]" disabled={false} onClick={() => {
                 if (!flag) {
                   console.log(activeDevice);
                   if (!activeDevice) {
@@ -655,46 +639,7 @@ function Chart({ params }: { params: PageProps}) {
         </CardFooter>
       </Card>
 
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Pair Device</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label className="block mb-2">Available Devices</Label>
-              <div className="space-y-2">
-                {devices.length > 0 ? (
-                  devices.map((device) => (
-                    <label
-                      key={device}
-                      className={`flex items-center gap-2 cursor-pointer p-2 rounded ${selectedDevice === device ? "bg-blue-100 dark:bg-blue-500" : "hover:bg-gray-100 dark:hover:bg-gray-500"
-                        }`}
-                    >
-                      <input
-                        type="radio"
-                        name="device"
-                        value={device}
-                        checked={selectedDevice === device}
-                        onChange={() => setSelectedDevice(device)}
-                      />
-                      <span>{device}</span>
-                    </label>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500">No devices detected yet.</p>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3">
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleEditSubmit}>Save Changes</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PairDevice devices={devices} selectedDevice={selectedDevice} setSelectedDevice={setSelectedDevice} showEditDialog={showEditDialog} setShowEditDialog={setShowEditDialog} handleEditSubmit={handleEditSubmit} />            
 
       <Summarize pressure={pressureData} startAt={beginTime} finishAt={endTime} isFinish={isFinish} setIsFinish={setIsFinish} />
 
@@ -703,6 +648,58 @@ function Chart({ params }: { params: PageProps}) {
       <Timer timer={timer} onSubmit={handleTime} isEditing={isEditing} setTimeValue={setTimeValue} setInitTimer={setInitTimer} sleep={sleep.duration} setSleep={setSleep} reps={reps.total} setReps={setReps} setIsEditing={setIsEditing} restSound={restSound} setRestSound={setRestSound} />
 
     </div>
+  );
+}
+
+function PairDevice({devices, selectedDevice, setSelectedDevice, showEditDialog, setShowEditDialog, handleEditSubmit}: {
+  devices: string[], 
+  selectedDevice: string | null, 
+  setSelectedDevice: React.Dispatch<React.SetStateAction<string | null>>, 
+  showEditDialog: boolean, 
+  setShowEditDialog: React.Dispatch<React.SetStateAction<boolean>>, 
+  handleEditSubmit: () => Promise<void>
+}) {
+  return (
+    <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Pair Device</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div>
+            <Label className="block mb-2">Available Devices</Label>
+            <div className="space-y-2">
+              {devices.length > 0 ? (
+                devices.map((device) => (
+                  <label
+                    key={device}
+                    className={`flex items-center gap-2 cursor-pointer p-2 rounded ${selectedDevice === device ? "bg-blue-100 dark:bg-blue-500" : "hover:bg-gray-100 dark:hover:bg-gray-500"
+                      }`}
+                  >
+                    <input
+                      type="radio"
+                      name="device"
+                      value={device}
+                      checked={selectedDevice === device}
+                      onChange={() => setSelectedDevice(device)}
+                    />
+                    <span>{device}</span>
+                  </label>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No devices detected yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3">
+          <DialogClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DialogClose>
+          <Button onClick={handleEditSubmit}>Save Changes</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

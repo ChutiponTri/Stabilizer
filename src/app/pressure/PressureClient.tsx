@@ -13,13 +13,15 @@ type TimerProps = {
 export type PageProps = {
   mode: string;
   id: string;
+  device: string | undefined
   timer: TimerProps
 }
 
-function PressureClient({ mode, id, timer }: { mode: string, id: string, timer: TimerProps}) {
+function PressureClient({ mode, id, timer, device }: PageProps) {
   const typedParams: PageProps = {
     mode: mode,
     id: id,
+    device: device,
     timer: timer
   };
   return (
