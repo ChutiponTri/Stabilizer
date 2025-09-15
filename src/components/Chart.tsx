@@ -429,14 +429,6 @@ function Chart({ params }: { params: PageProps}) {
 
   return (
     <div>
-
-      <div>
-        {/* <audio ref={audioRef} preload="auto" /> */}
-        {/* <button onClick={() => playSound("/sounds/oplata.m4a")}>Start</button>
-        <button onClick={() => playSound("/sounds/cizem.m4a")}>Finish</button>
-        <button onClick={() => playSound("/sounds/warning.m4a")}>Warning</button> */}
-      </div>
-
       <Card className="flex flex-col">
         <CardHeader>
           <div className="flex justify-between items-center">
