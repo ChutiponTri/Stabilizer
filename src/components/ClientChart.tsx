@@ -351,8 +351,8 @@ function Chart({ params }: { params: ClientProps }) {
     // if (flag && !started) return setWaiting();                           // Comment out for skip hardware cmd
 
     initPercent();
-    const now = new Date(startTimeRef.current).getTime();
-    console.log(now)
+    // const now = new Date(startTimeRef.current).getTime();
+    const now = Date.now();
     const duration = timeValue * 1000;
     const sleepDuration = sleep.duration * 1000;
     let targetEndTime = now + duration;
