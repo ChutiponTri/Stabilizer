@@ -107,10 +107,8 @@ function ShowSkeleton() {
 }
 
 function ShowRightBar({ users }: { users: Record<string, any> }) {
-
   const entries = Object.entries(users);
   if (entries.length === 0) return null;
-
   return (
     <Card>
       <CardHeader>

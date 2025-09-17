@@ -7,10 +7,13 @@ class MQTT {
   client!: MqttClient;
   callback: (data: any) => void;
   startCallback: (flag: boolean) => void;
+  clientStartCallback: ((timestamp: number) => void) | undefined;
+  setIsReady?: React.Dispatch<React.SetStateAction<boolean>>;
   data_topic: string = "";
   cmd_topic: string = "";
   start_topic: string = "";
   pair_topic: string;
+  client_topic: string;
   dev_topic: string;
   dev_name: string = "";
   isInitialized: boolean = false;
@@ -18,14 +21,21 @@ class MQTT {
   port: number = 0;
   username: string = "";
   password: string = "";
+  isClient: boolean;
+  topicCount: number = 0;
 
   constructor(
+    isClient: boolean,
     dataCallback: (data: any) => void,
-    startCallback: (flag: boolean) => void
+    startCallback: (flag: boolean) => void,
+    clientStartCallback?: ((timestamp: number) => void) | undefined,
+    setIsReady?: React.Dispatch<React.SetStateAction<boolean>>
   ) {
+    this.isClient = isClient;
     this.data_topic = process.env.NEXT_PUBLIC_DATA_TOPIC || "undefined";
     this.cmd_topic = process.env.NEXT_PUBLIC_CMD_TOPIC || "undefined";
     this.pair_topic = process.env.NEXT_PUBLIC_PAIR_TOPIC || "undefined";
+    this.client_topic = process.env.NEXT_PUBLIC_CLIENT_TOPIC || "undefined";
     this.dev_topic = process.env.NEXT_PUBLIC_DEV_TOPIC || "undefined";
     this.start_topic = process.env.NEXT_PUBLIC_START_TOPIC || "undefined";
     this.broker = process.env.NEXT_PUBLIC_MQTT_BROKER || "undefined";
@@ -34,6 +44,7 @@ class MQTT {
     this.password = process.env.NEXT_PUBLIC_MQTT_PASS || "undefined";
     if (
       this.pair_topic === "undefined" ||
+      this.client_topic === "undefined" ||
       this.dev_topic === "undefined" ||
       this.broker === "undefined" ||
       this.port === 0 ||
@@ -43,11 +54,14 @@ class MQTT {
 
     this.callback = dataCallback;
     this.startCallback = startCallback;
+    this.clientStartCallback = clientStartCallback;
+    this.setIsReady = setIsReady;
     this.connectMQTT();
     this.init();
   }
 
   async init() {
+    this.setIsReady?.(true);
     const response = await getDevice();
     if (response && typeof response === "object" && "device" in response) {
       const newDevName = response.device;
@@ -56,18 +70,21 @@ class MQTT {
         const newDataTopic = `${process.env.NEXT_PUBLIC_DATA_TOPIC}/${this.dev_name}`;
         const newCmdTopic = `${process.env.NEXT_PUBLIC_CMD_TOPIC}/${this.dev_name}`;
         const newStartTopic = `${process.env.NEXT_PUBLIC_START_TOPIC}/${this.dev_name}`;
+        const newClientTopic = `${process.env.NEXT_PUBLIC_CLIENT_TOPIC}/${this.dev_name}`;
 
         // Unsubscribe old topics if already initialized
         if (this.isInitialized && this.data_topic && this.cmd_topic) {
           this.client.unsubscribe(this.data_topic);
           this.client.unsubscribe(this.cmd_topic);
           this.client.unsubscribe(this.start_topic);
+          if (this.isClient) this.client.unsubscribe(this.client_topic);
         }
 
         // Update topics and subscribe
         this.data_topic = newDataTopic;
         this.cmd_topic = newCmdTopic;
         this.start_topic = newStartTopic;
+        this.client_topic = newClientTopic;
         this.subscribeToDynamicTopics();
         console.log("Start Topic ->", this.start_topic);
 
@@ -103,12 +120,20 @@ class MQTT {
   }
 
   private subscribeToDynamicTopics() {
+    this.topicCount = 0;
     this.client.subscribe(this.data_topic, this.handleSubResult("Data"));
     this.client.subscribe(this.cmd_topic, this.handleSubResult("Command"));
     this.client.subscribe(this.start_topic, this.handleSubResult("Start"));
+    this.isClient && this.client.subscribe(this.client_topic, this.handleSubResult("Client"));
   }
 
   private handleSubResult(name: string) {
+    this.topicCount += 1;
+    const expectedCount = this.isClient ? 4 : 3;
+    if (this.topicCount === expectedCount) {
+      this.topicCount = 0;
+      this.setIsReady?.(false);
+    }
     return (err: Error | null) => {
       if (err) {
         console.error(`Subscription to ${name} Topic failed:`, err);
@@ -133,6 +158,9 @@ class MQTT {
         console.log("Start Flag Trouble Test:", payload);
         console.log(payload.start, typeof payload.start);
         this.startCallback(true);
+      } else if (topic === this.client_topic) {
+        console.log(payload.message, typeof payload.message);
+        this.clientStartCallback?.(payload.message);
       }
     } catch (error) {
       console.error("Failed to parse MQTT message:", error);
@@ -166,6 +194,16 @@ class MQTT {
     }
   }
 
+  clientStart(timestamp: number) {
+    if (this.client?.connected) {
+      const payload = {
+        message: timestamp,
+      }
+      this.client.publish(this.client_topic, JSON.stringify(payload));
+    } else {
+      setTimeout(() => this.clientStart(timestamp), 100); // 100ms retry
+    }
+  }
 }
 
 export default MQTT

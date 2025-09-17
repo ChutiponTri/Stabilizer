@@ -11,7 +11,8 @@ export default clerkMiddleware((auth, req: NextRequest) => {
     "/getdata",
     "/patients",
     "/pressure",
-    "/profile"
+    "/profile",
+    "/client",
   ];
 
   const isRoot = pathname === "/";

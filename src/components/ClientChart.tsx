@@ -6,17 +6,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import MQTT from "./MQTT"
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, } from "@/components/ui/dialog"
 import { Button } from "./ui/button"
-import { getCustomers, queryCustomers } from "@/actions/user.action"
-import { saveDevice, storeData } from "@/actions/data.action"
+import { saveDevice } from "@/actions/data.action"
 import { warning } from "@/utils/toastUtils"
 import toast from "react-hot-toast"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Label } from "./ui/label"
 import { Input } from "./ui/input"
 import { Select, SelectTrigger, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectValue } from "./ui/select"
 import { saveTimer } from "@/actions/chart.action"
-import { PageProps } from "@/app/pressure/PressureClient"
+import { ClientProps } from "@/app/client/chart/Client"
 
 const maxPressure = 100;
 const initialMode = [
@@ -53,10 +51,8 @@ type SleepDuration = {
   flag: boolean,
 };
 
-function Chart({ params }: { params: PageProps }) {
-  const router = useRouter();
+function Chart({ params }: { params: ClientProps }) {
   const activeLabel = params.mode;
-  const patientId = params.id;
   const device = params.device;
 
   const startTimerInit = params.timer.timer;
@@ -71,7 +67,7 @@ function Chart({ params }: { params: PageProps }) {
   const [pressure, setPressure] = React.useState<{ pressure: number; timestamp?: string }>({ pressure: 25 });
   const [pressureData, setData] = React.useState<{ pressure: number; timestamp: string }[]>([]);
   const [flag, setFlag] = React.useState(false);
-  const [startTime, setTime] = React.useState<string | undefined>(undefined);
+  const [startTime, setTime] = React.useState<number>(Date.now());
   const [showEditDialog, setShowEditDialog] = React.useState(false);
   const [devices, setDevices] = React.useState<string[]>([]);
   const [selectedDevice, setSelectedDevice] = React.useState<string | null>(null);
@@ -139,20 +135,6 @@ function Chart({ params }: { params: PageProps }) {
   // Check if Patient is Exist in DB
   React.useEffect(() => {
     setIsClient(true);
-    const fetchPatient = async () => {
-      try {
-        const patient = await queryCustomers(patientId);
-        console.log("Patient?", patient);
-        if (!patient) {
-          toast.error("Patient does not exist, please try again");
-          router.replace("/");
-          const resp = await getCustomers(true);
-        }
-      } catch (error) {
-        console.error("Error fetching customers:", error);
-      }
-    };
-    fetchPatient();
   }, []);
 
   const activeMode = modes.find((mode) => activeLabel.toLowerCase().includes(mode.label));
@@ -189,11 +171,8 @@ function Chart({ params }: { params: PageProps }) {
           return [...prevData, newData];
         });
         setPressure(newData);
-        newData.start = startTimeRef.current;
-        newData.patient = patientId;
+        newData.start = startTimeRef.current.toLocaleString();
         newData.mode = activeLabel;
-        const response = await storeData(newData);
-        console.log(response);
       } else if ("device" in data && typeof data.device === "string") {
         setDevices((prevData) => {
           if (!prevData.includes(data.device!)) {
@@ -213,7 +192,15 @@ function Chart({ params }: { params: PageProps }) {
       }
     }
 
-    const mqttClient = new MQTT(false, dataCallback, startCallback, undefined, setIsReady);
+    const clientStartCallback = async (timestamp: number) => {
+      if (timestamp !== 0) {
+        start(timestamp);
+      } else {
+        stop();
+      }
+    }
+
+    const mqttClient = new MQTT(true, dataCallback, startCallback, clientStartCallback, setIsReady);
     mqttRef.current = mqttClient;
     return () => {
       // Clean up MQTT client
@@ -243,12 +230,6 @@ function Chart({ params }: { params: PageProps }) {
   const pair = () => {
     if (!isClient || !activeLabel || !mqttRef.current) return;
     mqttRef.current.pair();
-    console.log("MQTT Devices → Start Query");
-  }
-
-  const clientStart = (timestamp: number) => {
-    if (!isClient || !activeLabel || !mqttRef.current) return;
-    mqttRef.current.clientStart(timestamp);
     console.log("MQTT Devices → Start Query");
   }
 
@@ -321,6 +302,35 @@ function Chart({ params }: { params: PageProps }) {
     });
   }
 
+  const start = (timestamp: number) => {
+    if (!flag) {
+      console.log(activeDevice);
+      if (!activeDevice) {
+        setShowEditDialog(true);
+        pair();
+      } else {
+        setData([]);
+        setReps(prevReps => ({
+          ...prevReps,
+          remaining: prevReps.total,
+        }));
+        setFlag(true);
+        setStarted(true);                                 // Change from false to true
+        setIsFinish(false);
+        const curTime = new Date(timestamp);
+        setTime(curTime.getTime());
+        // publish();                                     // Comment out this line for skip start signal
+      }
+    }
+  }
+
+  const stop = () => {
+    setFlag(false);
+    setStarted(false);
+    setPressure({ pressure: 25 });
+    setIsFinish(true);
+  }
+
   const setWaiting = () => {
     const fillColor = "hsl(210, 100%, 65%)";
     const seconds = timeValue;
@@ -341,8 +351,8 @@ function Chart({ params }: { params: PageProps }) {
     // if (flag && !started) return setWaiting();                           // Comment out for skip hardware cmd
 
     initPercent();
-    const now = Date.now();
-    clientStart(now);
+    const now = new Date(startTimeRef.current).getTime();
+    console.log(now)
     const duration = timeValue * 1000;
     const sleepDuration = sleep.duration * 1000;
     let targetEndTime = now + duration;
@@ -438,11 +448,9 @@ function Chart({ params }: { params: PageProps }) {
               </span>
             </div>
             <div className="font-bold my-0 py-0">
-              <Link href={{ pathname: "/modes", query: { mode: activeLabel, isClient: false } }}>
-                <span className="inline-block transition-transform duration-200 hover:scale-110 origin-center hover:text-blue-500 cursor-pointer">
-                  Patient ID: {patientId}
-                </span>
-              </Link>
+              <span className="inline-block transition-transform duration-200 hover:scale-110 origin-center hover:text-blue-500 cursor-pointer">
+                Patient ID: Client
+              </span>
             </div>
           </div>
           <div className="flex-1 text-center">
@@ -450,41 +458,20 @@ function Chart({ params }: { params: PageProps }) {
               <CardTitle className="text-2xl font-bold">{activeLabel}</CardTitle> :
               <Link href={{ pathname: `/modes/${activeMode.label === "lumbar extension" ? "lumbar" : activeMode.label}`, query: { isClient: false } }}>
                 <CardTitle className="text-2xl font-bold transition-transform duration-200 hover:scale-110 origin-center hover:text-blue-500 cursor-pointer">
-                  {activeLabel}
+                  Client Mode
                 </CardTitle>
               </Link>
             }
-            <CardDescription>Pressure Data in mmHg</CardDescription>
+            <CardDescription>{activeLabel}</CardDescription>
           </div>
           <div className="flex gap-3">
             <div className="flex gap-2">
               <Button className="h-7 w-full sm:w-[120px]" disabled={isReady} onClick={() => {
-                if (!flag) {
-                  console.log(activeDevice);
-                  if (!activeDevice) {
-                    setShowEditDialog(true);
-                    pair();
-                  } else {
-                    setData([]);
-                    setReps(prevReps => ({
-                      ...prevReps,
-                      remaining: prevReps.total,
-                    }));
-                    setFlag(true);
-                    setStarted(true);                                 // Change from false to true
-                    setIsFinish(false);
-                    const curTime = new Date().toLocaleString();
-                    setTime(curTime);
-                    // publish();                                     // Comment out this line for skip start signal
-                  }
-                }
+                const now = Date.now();
+                start(now);
               }}>Start</Button>
               <Button className="h-7 w-full sm:w-[120px]" onClick={() => {
-                clientStart(0);
-                setFlag(false);
-                setStarted(false);
-                setPressure({ pressure: 25 });
-                setIsFinish(true);
+                stop();
               }}>Stop</Button>
               <Button variant="outline" className="h-7 w-full sm:w-[120px]" onClick={() => {
                 if (!flag) {
@@ -746,8 +733,7 @@ function Summarize({ pressure, startAt, finishAt, isFinish, setIsFinish }: {
                 <Label className="block mb-2">Maximum Pressure: {maxPressure} mmHg</Label>
                 <Label className="block mb-2">Minimum Pressure: {minPressure} mmHg</Label>
               </>
-            )
-            }
+            )}
           </div>
         </div>
         <div className="flex justify-end gap-3">

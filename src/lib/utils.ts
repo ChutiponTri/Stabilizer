@@ -8,14 +8,13 @@ export function cn(...inputs: ClassValue[]) {
 export function checkAvailableMode(mode: string) {
   const available = [
     "cervical flexion", "thoracic extension", "thoracic side-shift to right", "thoracic rotation to right",
-    "lumbar flexion", "lumbar extension", "lumbar side-shift to right", "lumbar rotation to right", "custom"
+    "lumbar flexion", "lumbar extension", "lumbar side-shift to right", "lumbar rotation to right", "custom", "client"
   ];
   if (!available.includes(mode.toLowerCase())) {
     return false;
   }
   return true;
 }
-
 
 const ModeConfig = {
   thoracic: [

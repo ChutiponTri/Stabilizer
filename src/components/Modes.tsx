@@ -7,7 +7,7 @@ import { useTheme } from "next-themes"
 import { Skeleton } from "./ui/skeleton";
 import Link from "next/link";
 
-function Modes() {
+function Modes({ isClient }: { isClient: boolean }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
@@ -19,9 +19,9 @@ function Modes() {
   if (!mounted) return <SkeletonTime />;
 
   return (
-    <div className="columns-2">
+    <div className="grid grid-cols-2 gap-4">
       <div>
-        <Link href={{pathname: "/modes", query:{ mode: "Cervical Flexion"}}} className="block" >
+        <Link href={{ pathname: isClient ? "/client/chart" : "/modes", query: { mode: "Cervical Flexion" } }} className="block" >
           <Card className="w-full mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
             <CardHeader>
               <CardTitle>Cervical Mode</CardTitle>
@@ -38,7 +38,7 @@ function Modes() {
           </Card>
         </Link>
 
-        <Link href={"/modes/lumbar"} className="block">
+        <Link href={{ pathname: "/modes/lumbar", query: { isClient: isClient } }} className="block">
           <Card className="w-full hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
             <CardHeader>
               <CardTitle>Lumbar Mode</CardTitle>
@@ -58,7 +58,7 @@ function Modes() {
       </div>
 
       <div>
-        <Link href={"/modes/thoracic"} className="block">
+        <Link href={{ pathname: "/modes/thoracic", query: { isClient: isClient } }} className="block">
           <Card className="w-full mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
             <CardHeader>
               <CardTitle>Thoracic Mode</CardTitle>
@@ -75,7 +75,7 @@ function Modes() {
           </Card>
         </Link>
 
-        <Link href={{pathname: "/modes", query:{ mode: "Custom"}}} className="block">
+        <Link href={{ pathname: isClient ? "/client/chart" :"/modes", query: { mode: "Custom" } }} className="block">
           <Card className="w-full hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
             <CardHeader>
               <CardTitle>Custom Mode</CardTitle>
@@ -92,6 +92,20 @@ function Modes() {
           </Card>
         </Link>
       </div>
+
+      {!isClient && (
+        <div className="col-span-2">
+          {/* <Link href={{ pathname: "/client", query: { mode: "Client", id: "Test" } }} className="block"> */}
+          <Link href="/client" className="block">
+            <Card className="w-full hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
+              <CardHeader>
+                <CardTitle>Client Mode</CardTitle>
+                <CardDescription>Choose to Enter Client Mode</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

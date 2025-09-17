@@ -23,10 +23,12 @@ const ModeConfig = {
   ]
 }
 
-function ModeClient({ mode }: { mode: string }) {
+function ModeClient({ mode, isClient }: { mode: string, isClient: boolean }) {
   const validMode = mode as keyof typeof ModeConfig;
   const modes = ModeConfig[validMode];
   const { theme, setTheme } = useTheme();
+
+  console.log(isClient, typeof isClient)
 
   const [customers, setCustomers] = React.useState<string[]>([]);
   const [fetching, setFetching] = React.useState<boolean>(true);
@@ -40,7 +42,7 @@ function ModeClient({ mode }: { mode: string }) {
     } finally {
       setFetching(false);
     }
-  };
+  }
 
   React.useEffect(() => {
     fetchCustomers();
@@ -57,7 +59,7 @@ function ModeClient({ mode }: { mode: string }) {
         {modes.length > 0 ? (
           modes.map((mode, index) => (
             <div key={index} className="w-full items-center justify-between">
-              <Link href={{ pathname: "/modes", query: { mode: mode.label } }} className="w-full" >
+              <Link href={{ pathname: isClient ? "/client/chart" : "/modes", query: { mode: mode.label } }} className="w-full" >
                 <Card className="w-full h-full mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
                   <CardHeader>
                     <CardTitle>{mode.label}</CardTitle>
