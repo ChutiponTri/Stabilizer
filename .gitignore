@@ -38,3 +38,5 @@ next-env.d.ts
 
 *.docx
 *.pdf
+*.xlsx
+test_similarity.py
